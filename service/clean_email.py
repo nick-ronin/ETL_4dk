@@ -58,3 +58,8 @@ def clean_email(email_str):
     # Если нашли хоть один email — склеиваем их через запятую
     # Если ничего не нашли — возвращаем "Ничего" (None)
     return ', '.join(cleaned_parts) if cleaned_parts else None
+
+
+
+# print(clean_email(""))
+# print(clean_email("testexample.com; user@domain.org, admin@company.com / support@service.net | info@business.info, test.com"))

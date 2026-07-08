@@ -1,7 +1,7 @@
 import pandas as pd
 import re
 
-def clean_phone(phone_raw):
+def clean_phone(phone_raw: str) -> str:
     """
     Приводит номера телефонов к формату +7XXXXXXXXXX.
     Поддерживает разделители: ; , / |.
@@ -49,3 +49,6 @@ def clean_phone(phone_raw):
 
     # Объединяем части через запятую с пробелом
     return ', '.join(cleaned_parts) if cleaned_parts else None
+
+
+# print (clean_phone("8 (912) 345-67-89; +7 912 345 67 89, 89123456789 / 9123456789 | +79123456789"))
