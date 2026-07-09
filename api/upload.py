@@ -13,12 +13,15 @@ from fastapi import File
 from fastapi import HTTPException
 from fastapi import UploadFile
 
+# loader, mapper, validator
 from service.source_processing.src.source_loader import process_uploaded_file
 from service.source_processing.src.source_mapper import process_file, MVP_COLUMNS
 
+# normalizer 
+from service.normalizer.normalizer import clean_INN, clean_phone, clean_email, clean_company_name
 
-# импорты нормализаторов
-from service.normalizer import clean_INN, clean_phone, clean_email, clean_company_name
+# deduplicator
+from service.deduplicator import get_duplicates
 
 router = APIRouter(
     prefix="/upload",
