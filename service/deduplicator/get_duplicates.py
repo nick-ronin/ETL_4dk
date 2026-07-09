@@ -1,120 +1,129 @@
 import pandas as pd
+import os
+from datetime import datetime
 
-table_path = "tables.xlsx"
-table = pd.read_excel(table_path, sheet_name="Чекко")
-
-columns = ["ИНН", "Email", "Телефоны", "Сокращенное наименование"]
-
-def get_duplicates_report(df, columns, dropna=True):
+def get_duplicates(df, columns, source_name="uploaded_file", output_dir="output"):
     """
-    Возвращает словарь с отчётом по дубликатам для каждой колонки.
-    Ключ - название колонки, значение - DataFrame с группировкой
-    (значение, количество повторов, индексы строк, примеры названий).
-    Если дубликатов нет - пустой DataFrame.
-    Также ищет полные дубликаты, где все значения в строке совпадают.
-    Заносит их на отдельный лист в Excel.
+    Создаёт отчёт о коллизиях (дубликатах) с номерами строк в исходном файле.
     """
-    report = {}
-    # 1. Поиск дубликатов по каждой указанной колонке (как раньше)
+    df = df.copy()
+    df['Номер_строки_источник'] = df.index + 2
+
+    collisions = []
+    summary = {}
+
+    # 1. Частичные дубликаты (по каждой колонке отдельно)
     for col in columns:
         if col not in df.columns:
-            report[col] = f"Колонка '{col}' отсутствует в таблице"
             continue
-        series = df[col].dropna() if dropna else df[col]
+
+        series = df[col].dropna()
         counts = series.value_counts()
         dupl_values = counts[counts > 1]
+
         if dupl_values.empty:
-            report[col] = pd.DataFrame()
+            summary[col] = {'всего_групп': 0, 'всего_строк': 0}
             continue
-        rows = []
+
+        group_counter = 0
         for value, count in dupl_values.items():
-            idx = df.index[df[col] == value].tolist()
-            sample_names = df.loc[idx, 'Сокращенное наименование'].tolist()
-            rows.append({
-                'Значение': value,
-                'Повторов': count,
-                'Индексы строк': idx,
-                'Примеры организаций': sample_names
-            })
-        report[col] = pd.DataFrame(rows)
+            dupl_rows = df[df[col] == value].copy()
 
-    # 2. Поиск полных дубликатов (по всем столбцам)
-    # duplicated(keep=False) отмечает ВСЕ строки, которые имеют полную копию
-    full_dupl_mask = df.duplicated(keep=False)
-    if not full_dupl_mask.any():
-        report['Полные дубликаты'] = pd.DataFrame()
-    else:
-        # Группируем строки по ВСЕМ значениям, превращённым в кортеж
-        # Это надёжнее, чем duplicated, чтобы получить группы
-        groups = df[full_dupl_mask].groupby(list(df.columns))
-        rows_full = []
+            dupl_rows['Источник'] = source_name
+            dupl_rows['Поле'] = col
+            dupl_rows['Значение_дубликата'] = str(value)
+            dupl_rows['Тип_дубликата'] = 'частичный'
+            dupl_rows['Группа_дубликата'] = f"{col}_{group_counter}"
+
+            collisions.append(dupl_rows)
+            group_counter += 1
+
+        summary[col] = {
+            'всего_групп': group_counter,
+            'всего_строк': sum(len(c) for c in collisions[-group_counter:]) if group_counter > 0 else 0
+        }
+
+    # 2. Полные дубликаты (по всем колонкам)
+    # Исключаем служебную колонку из сравнения
+    cols_for_full = [c for c in df.columns if c != 'Номер_строки_источник']
+    full_dupl_mask = df[cols_for_full].duplicated(keep=False)
+
+    if full_dupl_mask.any():
+        full_dupl = df[full_dupl_mask].copy()
+
+        groups = full_dupl.groupby(cols_for_full)
+        group_counter = 0
         for values_tuple, group_df in groups:
-            idxs = group_df.index.tolist()
-            # Берём название организации из первой строки группы
-            sample_name = group_df['Сокращенное наименование'].iloc[0]
-            rows_full.append({
-                'Индексы строк': idxs,
-                'Количество': len(idxs),
-                'Пример организации': sample_name,
-                # Опционально можно добавить любые ключевые поля, например ИНН
-                'ИНН': group_df['ИНН'].iloc[0] if 'ИНН' in df.columns else ''
-            })
-        report['Полные дубликаты'] = pd.DataFrame(rows_full)
-    return report
+            group_df = group_df.copy()
+            group_df['Источник'] = source_name
+            group_df['Поле'] = 'ВСЕ'
+            group_df['Значение_дубликата'] = 'ПОЛНОЕ СОВПАДЕНИЕ'
+            group_df['Тип_дубликата'] = 'полный'
+            group_df['Группа_дубликата'] = f"FULL_{group_counter}"
 
-duplicate_report = get_duplicates_report(table, columns)
+            collisions.append(group_df)
+            group_counter += 1
 
-# Запись красивого текстового отчёта
-with open("duplicates_report.txt", "w", encoding="utf-8") as f:
-    for section, data in duplicate_report.items():
-        f.write(f"{'='*50}\n")
-        f.write(f"{section}\n")
-        f.write(f"{'='*50}\n")
-        if isinstance(data, str):
-            f.write(data + "\n\n")
-        elif data.empty:
-            f.write("Дубликаты не найдены.\n\n")
+        summary['Полные дубликаты'] = {
+            'всего_групп': group_counter,
+            'всего_строк': sum(len(c) for c in collisions[-group_counter:]) if group_counter > 0 else 0
+        }
+    else:
+        summary['Полные дубликаты'] = {'всего_групп': 0, 'всего_строк': 0}
+
+    # Объединяем все коллизии в одну таблицу
+    if collisions:
+        collisions_df = pd.concat(collisions, ignore_index=False)
+        # Переставляем служебные колонки в начало
+        service_cols = ['Источник', 'Номер_строки_источник', 'Группа_дубликата', 'Тип_дубликата', 'Поле', 'Значение_дубликата']
+        other_cols = [c for c in collisions_df.columns if c not in service_cols]
+        collisions_df = collisions_df[service_cols + other_cols]
+        # Сортируем для удобства
+        collisions_df = collisions_df.sort_values(['Тип_дубликата', 'Поле', 'Группа_дубликата'])
+    else:
+        collisions_df = pd.DataFrame()
+
+    # Сводка в DataFrame
+    summary_df = pd.DataFrame(summary).T
+    summary_df.index.name = 'Поле'
+    summary_df = summary_df.reset_index()
+
+    os.makedirs(output_dir, exist_ok=True)
+    safe_name = "".join(c if c.isalnum() or c in "._- " else "_" for c in source_name)
+    base_name = os.path.splitext(safe_name)[0]
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_path = os.path.join(output_dir, f"collisions_{base_name}_{timestamp}.xlsx")
+
+    # Сохраняем в Excel с разными листами
+    with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+        # Лист 1: Все коллизии
+        if not collisions_df.empty:
+            # Убираем индекс pandas, чтобы не путать с номерами строк
+            collisions_df.to_excel(writer, sheet_name='Коллизии', index=False)
         else:
-            if section == 'Полные дубликаты':
-                for _, row in data.iterrows():
-                    f.write(f"Индексы строк: {row['Индексы строк']}\n")
-                    f.write(f"Количество: {row['Количество']}\n")
-                    f.write(f"Пример организации: {row['Пример организации']}\n")
-                    if 'ИНН' in row:
-                        f.write(f"ИНН: {row['ИНН']}\n")
-                    f.write("-"*40 + "\n")
-            else:
-                for _, row in data.iterrows():
-                    f.write(f"Значение: {row['Значение']}\n")
-                    f.write(f"Повторов: {row['Повторов']}\n")
-                    f.write(f"Индексы строк: {row['Индексы строк']}\n")
-                    f.write(f"Организации: {row['Примеры организаций']}\n")
-                    f.write("-"*40 + "\n")
-            f.write("\n")
-
-with pd.ExcelWriter("duplicates_full_report.xlsx") as writer:
-    # Листы по каждой колонке
-    for col in columns:
-        if col not in table.columns:
-            continue
-        dupl_mask = table[col].duplicated(keep=False)
-        dupl_rows = table[dupl_mask].sort_values(col)
-        if not dupl_rows.empty:
-            dupl_rows.to_excel(writer, sheet_name=col[:31], index=False)
-        else:
-            pd.DataFrame({"Результат": ["Дубликаты не найдены"]}).to_excel(
-                writer, sheet_name=col[:31], index=False
+            pd.DataFrame({"Результат": ["Коллизии не найдены"]}).to_excel(
+                writer, sheet_name='Коллизии', index=False
             )
 
-    # Лист с полными дубликатами
-    full_dupl_mask = table.duplicated(keep=False)
-    if full_dupl_mask.any():
-        full_dupl = table[full_dupl_mask].copy()
-        # Добавим столбец "ID_группы" для удобства
-        full_dupl['Группа_дубликатов'] = full_dupl.groupby(list(table.columns)).ngroup()
-        full_dupl = full_dupl.sort_values('Группа_дубликатов')
-        full_dupl.to_excel(writer, sheet_name='Полные_дубликаты', index=False)
-    else:
-        pd.DataFrame({"Результат": ["Полные дубликаты отсутствуют"]}).to_excel(
-            writer, sheet_name='Полные_дубликаты', index=False
-        )
+        # Лист 2: Сводка по полям
+        summary_df.to_excel(writer, sheet_name='Сводка', index=False)
+
+        # Лист 3: Полные дубликаты отдельно
+        if not collisions_df.empty:
+            full_collisions = collisions_df[collisions_df['Тип_дубликата'] == 'полный']
+            if not full_collisions.empty:
+                full_collisions.to_excel(writer, sheet_name='Полные_дубликаты', index=False)
+            else:
+                pd.DataFrame({"Результат": ["Полные дубликаты не найдены"]}).to_excel(
+                    writer, sheet_name='Полные_дубликаты', index=False
+                )
+        else:
+            pd.DataFrame({"Результат": ["Коллизии не найдены"]}).to_excel(
+                writer, sheet_name='Полные_дубликаты', index=False
+            )
+
+    return {
+        'collisions_file': file_path,
+        'summary': summary,
+        'rows_affected': len(collisions_df) if not collisions_df.empty else 0
+    }
