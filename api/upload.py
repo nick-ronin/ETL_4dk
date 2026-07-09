@@ -16,6 +16,10 @@ from fastapi import UploadFile
 from service.source_processing.src.source_loader import process_uploaded_file
 from service.source_processing.src.source_mapper import process_file, MVP_COLUMNS
 
+
+# импорты нормализаторов
+from service.normalizer import clean_INN, clean_phone, clean_email, clean_company_name
+
 router = APIRouter(
     prefix="/upload",
     tags=["Upload"]
