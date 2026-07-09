@@ -9,7 +9,7 @@ def clean_phone(phone_raw):
     Если номер уже содержит +, он сохраняется.
     Несколько номеров в одной ячейке объединяются через ', '.
     """
-    if pd.isna(phone_raw) or not isinstance(phone_raw, str):
+    if pd.isna(phone_raw):
         return phone_raw
 
     # Разбиваем по основным разделителям (точка с запятой, запятая, слэш, вертикальная черта)
