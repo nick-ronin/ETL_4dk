@@ -87,7 +87,7 @@ async def upload_file(file: UploadFile = File(...)):
 
         return {
             "status": mapper_result["status"],
-            "validation": str(validation_info),   # используем то, что запомнили
+            "validation": str(validation_info),
             "rows": len(df),
             "columns": list(df.columns),
             "data": clean_data
