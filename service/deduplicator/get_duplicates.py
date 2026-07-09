@@ -1,18 +1,14 @@
 import pandas as pd
+import os
+from datetime import datetime
 
-table_path = "tables.xlsx"
-table = pd.read_excel(table_path, sheet_name="Чекко")
-
-# Добавляем колонку с номером строки в исходном файле
-# +2 потому что: строка 1 = заголовок, данные начинаются со строки 2
-table['Номер_строки_источник'] = table.index + 2
-
-columns = ["ИНН", "Email", "Телефоны", "Сокращенное наименование"]
-
-def get_duplicates(df, columns, source_name="tables.xlsx", dropna=True):
+def get_duplicates(df, columns, source_name="uploaded_file", output_dir="output"):
     """
     Создаёт отчёт о коллизиях (дубликатах) с номерами строк в исходном файле.
     """
+    df = df.copy()
+    df['Номер_строки_источник'] = df.index + 2
+
     collisions = []
     summary = {}
 
@@ -21,7 +17,7 @@ def get_duplicates(df, columns, source_name="tables.xlsx", dropna=True):
         if col not in df.columns:
             continue
 
-        series = df[col].dropna() if dropna else df[col]
+        series = df[col].dropna()
         counts = series.value_counts()
         dupl_values = counts[counts > 1]
 
@@ -92,35 +88,42 @@ def get_duplicates(df, columns, source_name="tables.xlsx", dropna=True):
     summary_df.index.name = 'Поле'
     summary_df = summary_df.reset_index()
 
-    return collisions_df, summary_df
+    os.makedirs(output_dir, exist_ok=True)
+    safe_name = "".join(c if c.isalnum() or c in "._- " else "_" for c in source_name)
+    base_name = os.path.splitext(safe_name)[0]
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_path = os.path.join(output_dir, f"collisions_{base_name}_{timestamp}.xlsx")
 
-# Формируем отчёт
-collisions_df, summary_df = get_duplicates(table, columns, source_name="tables.xlsx (Чекко)")
-
-# Сохраняем в Excel с разными листами
-with pd.ExcelWriter("collisions_report.xlsx", engine='openpyxl') as writer:
-    # Лист 1: Все коллизии
-    if not collisions_df.empty:
-        # Убираем индекс pandas, чтобы не путать с номерами строк
-        collisions_df.to_excel(writer, sheet_name='Коллизии', index=False)
-    else:
-        pd.DataFrame({"Результат": ["Коллизии не найдены"]}).to_excel(
-            writer, sheet_name='Коллизии', index=False
-        )
-
-    # Лист 2: Сводка по полям
-    summary_df.to_excel(writer, sheet_name='Сводка', index=False)
-
-    # Лист 3: Полные дубликаты отдельно
-    if not collisions_df.empty:
-        full_collisions = collisions_df[collisions_df['Тип_дубликата'] == 'полный']
-        if not full_collisions.empty:
-            full_collisions.to_excel(writer, sheet_name='Полные_дубликаты', index=False)
+    # Сохраняем в Excel с разными листами
+    with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+        # Лист 1: Все коллизии
+        if not collisions_df.empty:
+            # Убираем индекс pandas, чтобы не путать с номерами строк
+            collisions_df.to_excel(writer, sheet_name='Коллизии', index=False)
         else:
-            pd.DataFrame({"Результат": ["Полные дубликаты не найдены"]}).to_excel(
+            pd.DataFrame({"Результат": ["Коллизии не найдены"]}).to_excel(
+                writer, sheet_name='Коллизии', index=False
+            )
+
+        # Лист 2: Сводка по полям
+        summary_df.to_excel(writer, sheet_name='Сводка', index=False)
+
+        # Лист 3: Полные дубликаты отдельно
+        if not collisions_df.empty:
+            full_collisions = collisions_df[collisions_df['Тип_дубликата'] == 'полный']
+            if not full_collisions.empty:
+                full_collisions.to_excel(writer, sheet_name='Полные_дубликаты', index=False)
+            else:
+                pd.DataFrame({"Результат": ["Полные дубликаты не найдены"]}).to_excel(
+                    writer, sheet_name='Полные_дубликаты', index=False
+                )
+        else:
+            pd.DataFrame({"Результат": ["Коллизии не найдены"]}).to_excel(
                 writer, sheet_name='Полные_дубликаты', index=False
             )
-    else:
-        pd.DataFrame({"Результат": ["Коллизии не найдены"]}).to_excel(
-            writer, sheet_name='Полные_дубликаты', index=False
-        )
+
+    return {
+        'collisions_file': file_path,
+        'summary': summary,
+        'rows_affected': len(collisions_df) if not collisions_df.empty else 0
+    }

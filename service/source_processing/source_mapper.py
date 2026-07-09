@@ -117,7 +117,7 @@ for table, columns in ERD_COLUMNS.items():
 # Список колонок для MVP (базовый набор для быстрой работы)
 MVP_COLUMNS = [
     'inn', 'kpp', 'ogrn',
-    'short_name', 'full_name',
+    'full_name', 'short_name',
     'email', 'phone',
     'region', 'city', 'address',
     'contact_person', 'position',
