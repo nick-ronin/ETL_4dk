@@ -13,7 +13,8 @@ from fastapi import File
 from fastapi import HTTPException
 from fastapi import UploadFile
 
-from service.SourceLoader.src.source_loader import process_uploaded_file
+from service.source_processing.src.source_loader import process_uploaded_file
+from service.source_processing.src.source_mapper import process_file, MVP_COLUMNS
 
 router = APIRouter(
     prefix="/upload",
@@ -43,7 +44,7 @@ async def upload_file(file: UploadFile = File(...)):
     Принимает Excel/CSV файл, нормализует колонки и возвращает данные в JSON.
     """
     extension = os.path.splitext(file.filename)[1]
-    temp_path = None                         # инициализируем заранее, чтобы избежать NameError
+    temp_path = None  # инициализируем заранее, чтобы избежать NameError
 
     try:
         # Сохраняем загруженный файл во временный файл
@@ -55,33 +56,43 @@ async def upload_file(file: UploadFile = File(...)):
             temp_path = temp.name
 
         # Обрабатываем через SourceLoader
-        result = process_uploaded_file(
+        upload_result = process_uploaded_file(
             file_path=temp_path,
-            required_columns=["inn"],
-            save_output=False
+            required_columns=MVP_COLUMNS,
+            save_output=True, 
+            output_folder="output"
         )
 
-        if result["status"] == "ERROR":
-            raise HTTPException(
-                status_code=400,
-                detail=result["error"]
-            )
+        if upload_result["status"] == "ERROR":
+            raise HTTPException(status_code=400, detail=upload_result["error"])
+        
+        normalised_file_path = upload_result.get("saved_file")
+        if not normalised_file_path or not os.path.exists(normalised_file_path):
+            raise HTTPException(status_code=500, detail="Не удалось получить выходной файл после нормализации")
+        
+        validation_info = upload_result.get("validation_result", "Нет данных")
 
-        df = result["df"]
+        mapper_result = process_file(
+            input_file_path=normalised_file_path,
+            required_columns=MVP_COLUMNS,
+            output_folder="output"
+        )
 
-        # Подготавливаем безопасные для JSON данные
+        if mapper_result["status"] == "ERROR":
+            raise HTTPException(status_code=400, detail=mapper_result.get("error", "Ошибка маппера"))
+
+        df = mapper_result["df"]
         raw_data = df.to_dict(orient="records")
-        clean_data = clean_json_value(raw_data)   # убираем все NaN и Infinity
+        clean_data = clean_json_value(raw_data)
 
         return {
-            "status": result["status"],
-            "validation": result["validation_result"],
+            "status": mapper_result["status"],
+            "validation": str(validation_info),   # используем то, что запомнили
             "rows": len(df),
             "columns": list(df.columns),
             "data": clean_data
         }
 
     finally:
-        # Гарантированно удаляем временный файл, если он был создан
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)

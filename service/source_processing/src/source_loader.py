@@ -404,77 +404,77 @@ def process_uploaded_file(file_path: str,
         }
 
 
-# ============================================================
-# 6. ТЕСТИРОВАНИЕ
-# ============================================================
+# # ============================================================
+# # 6. ТЕСТИРОВАНИЕ
+# # ============================================================
 
-if __name__ == "__main__":
-    print("\n" + "=" * 60)
-    print("ТЕСТИРОВАНИЕ МОДУЛЯ source_loader")
-    print("=" * 60 + "\n")
+# if __name__ == "__main__":
+#     print("\n" + "=" * 60)
+#     print("ТЕСТИРОВАНИЕ МОДУЛЯ source_loader")
+#     print("=" * 60 + "\n")
     
-    # ТЕСТ 1: Проверка маппинга колонок
-    print("ТЕСТ 1: Проверка маппинга колонок")
-    print("-" * 40)
+#     # ТЕСТ 1: Проверка маппинга колонок
+#     print("ТЕСТ 1: Проверка маппинга колонок")
+#     print("-" * 40)
     
-    test_columns = ['ИНН', 'Полное наименование', 'Краткое наименование', 
-                    'Телефон', 'Email', 'Сайт', 'Регион', 'Город']
-    mapping = map_columns(test_columns)
-    print(f"Исходные колонки: {test_columns}")
-    print(f"Результат маппинга: {mapping}")
-    print()
+#     test_columns = ['ИНН', 'Полное наименование', 'Краткое наименование', 
+#                     'Телефон', 'Email', 'Сайт', 'Регион', 'Город']
+#     mapping = map_columns(test_columns)
+#     print(f"Исходные колонки: {test_columns}")
+#     print(f"Результат маппинга: {mapping}")
+#     print()
     
-    # ТЕСТ 2: Автоматический поиск и обработка файлов
-    print("ТЕСТ 2: Автоматический поиск и обработка файлов")
-    print("-" * 40)
+#     # ТЕСТ 2: Автоматический поиск и обработка файлов
+#     print("ТЕСТ 2: Автоматический поиск и обработка файлов")
+#     print("-" * 40)
     
-    found_files = find_test_files("test_files")
+#     found_files = find_test_files("test_files")
     
-    if not found_files:
-        print("\nВ папке test_files не найдено файлов с расширениями .xlsx, .xls или .csv")
-        print("Положите Excel или CSV файлы в папку 'test_files' и запустите программу снова")
-        print("\n" + "=" * 60)
-        print("ТЕСТИРОВАНИЕ ЗАВЕРШЕНО (ФАЙЛЫ НЕ НАЙДЕНЫ)")
-        print("=" * 60)
-        exit(0)
+#     if not found_files:
+#         print("\nВ папке test_files не найдено файлов с расширениями .xlsx, .xls или .csv")
+#         print("Положите Excel или CSV файлы в папку 'test_files' и запустите программу снова")
+#         print("\n" + "=" * 60)
+#         print("ТЕСТИРОВАНИЕ ЗАВЕРШЕНО (ФАЙЛЫ НЕ НАЙДЕНЫ)")
+#         print("=" * 60)
+#         exit(0)
     
-    print(f"\nНайдено файлов для обработки: {len(found_files)}")
-    print("-" * 40)
+#     print(f"\nНайдено файлов для обработки: {len(found_files)}")
+#     print("-" * 40)
     
-    for i, file_path in enumerate(found_files, 1):
-        print(f"\n--- Обработка файла {i}: {os.path.basename(file_path)} ---")
+#     for i, file_path in enumerate(found_files, 1):
+#         print(f"\n--- Обработка файла {i}: {os.path.basename(file_path)} ---")
         
-        # Обрабатываем файл с сохранением результата
-        result = process_uploaded_file(
-            file_path, 
-            required_columns=['inn'],
-            save_output=True,
-            output_folder="output"
-        )
+#         # Обрабатываем файл с сохранением результата
+#         result = process_uploaded_file(
+#             file_path, 
+#             required_columns=['inn'],
+#             save_output=True,
+#             output_folder="output"
+#         )
         
-        print(f"\nРЕЗУЛЬТАТ ОБРАБОТКИ для {os.path.basename(file_path)}:")
-        print(f"  Статус: {result['status']}")
+#         print(f"\nРЕЗУЛЬТАТ ОБРАБОТКИ для {os.path.basename(file_path)}:")
+#         print(f"  Статус: {result['status']}")
         
-        if result['validation_result']:
-            print(f"  Проверка: {result['validation_result']['message']}")
-            if result['validation_result']['missing_columns']:
-                print(f"  Отсутствуют: {result['validation_result']['missing_columns']}")
+#         if result['validation_result']:
+#             print(f"  Проверка: {result['validation_result']['message']}")
+#             if result['validation_result']['missing_columns']:
+#                 print(f"  Отсутствуют: {result['validation_result']['missing_columns']}")
         
-        if result['saved_file']:
-            print(f"  Сохранён: {result['saved_file']}")
+#         if result['saved_file']:
+#             print(f"  Сохранён: {result['saved_file']}")
         
-        if result['df'] is not None:
-            print(f"\n  Колонки после нормализации ({len(result['df'].columns)} колонок):")
-            print(f"    {list(result['df'].columns)}")
+#         if result['df'] is not None:
+#             print(f"\n  Колонки после нормализации ({len(result['df'].columns)} колонок):")
+#             print(f"    {list(result['df'].columns)}")
             
-            print(f"\n  Первые 3 строки данных:")
-            print(result['df'].head(3).to_string())
+#             print(f"\n  Первые 3 строки данных:")
+#             print(result['df'].head(3).to_string())
         
-        if result['error']:
-            print(f"\n  Ошибка: {result['error']}")
+#         if result['error']:
+#             print(f"\n  Ошибка: {result['error']}")
         
-        print("-" * 40)
+#         print("-" * 40)
     
-    print("\n" + "=" * 60)
-    print("ТЕСТИРОВАНИЕ ЗАВЕРШЕНО")
-    print("=" * 60)
+#     print("\n" + "=" * 60)
+#     print("ТЕСТИРОВАНИЕ ЗАВЕРШЕНО")
+#     print("=" * 60)
