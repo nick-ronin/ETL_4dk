@@ -18,7 +18,7 @@ from service.source_processing.source_loader import process_uploaded_file
 from service.source_processing.source_mapper import process_file, MVP_COLUMNS
 
 # normalizer 
-from service.normalizer.normalizer import clean_inn, clean_phone, clean_email, clean_short_name, clean_full_name, normalize_company_names
+from service.normalizer.normalizer import clean_inn, clean_phone, clean_email, normalize_company_names, clean_address
 
 # deduplicator
 from service.deduplicator.get_duplicates import get_duplicates
@@ -134,6 +134,9 @@ async def upload_file(file: UploadFile = File(...)):
         
         df['email'] = df['email'].apply(clean_email)
         print("✓ Email очищены")
+
+        df['address'] = df['address'].apply(clean_address)
+        print("✓ Адреса очищены")
 
         # ================================================
         # ШАГ 5: Дедупликация
