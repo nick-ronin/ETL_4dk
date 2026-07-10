@@ -23,6 +23,9 @@ from service.normalizer.normalizer import clean_inn, clean_phone, clean_email, n
 # deduplicator
 from service.deduplicator.get_duplicates import get_duplicates
 
+# data quality score
+from service.quality.quality import calculate_data_quality_score
+
 router = APIRouter(
     prefix="/upload",
     tags=["Upload"]
@@ -54,7 +57,8 @@ async def upload_file(file: UploadFile = File(...)):
     3. Фильтрация под ERD (SourceMapper)
     4. Нормализация данных (очистка ИНН, телефонов, названий)
     5. Поиск коллизий/дубликатов
-    6. Возврат результата в JSON
+    6. Оценка качества результата
+    7. Возврат результата в JSON
     """
     extension = os.path.splitext(file.filename)[1]
     temp_path = None  # инициализируем заранее, чтобы избежать NameError
@@ -177,12 +181,21 @@ async def upload_file(file: UploadFile = File(...)):
         if mapper_output_file and os.path.exists(mapper_output_file):
             os.remove(mapper_output_file)
             print(f"Удалён промежуточный файл маппера: {mapper_output_file}")
+         
+        quality_report = calculate_data_quality_score(df, dedup_result)
+        print(f'''✓ Quality Score рассчитан: {quality_report['overall_quality_score']}
+Детальн:
+COMPLETENESS (Полнота) = {quality_report['metrics'].get("completeness")}
+UNIQUENESS (Уникальность) = {quality_report['metrics'].get("uniqueness")}
+ACCURACY (Точность / Валидность) = {quality_report['metrics'].get("accuracy")}
+CONSISTENCY (Согласованность) = {quality_report['metrics'].get("consistency")}''')
 
         return {
             "status": mapper_result["status"],
             "validation": str(validation_info),
             "rows": len(df),
             "columns": list(df.columns),
+            "quality": quality_report,
             "data": clean_data
         }
         
