@@ -182,23 +182,6 @@ async def upload_file(file: UploadFile = File(...),
         print(f"✓ Отчёт сохранён: {dedup_result['collisions_file']}")
         print(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
 
-
-        # ================================================
-        # вывод файла
-        if download == True:
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine="openpyxl") as writer:
-                df.to_excel(writer, index=False, sheet_name="Cleaned Data")
-            output.seek(0)
-
-            headers = {
-                "Content-Disposition": f"attachment; filename=cleaned_{file.filename.rsplit('.', 1)[0]}.xlsx"
-            }
-            return StreamingResponse(
-                output,
-                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                headers=headers
-            )
         # ================================================
         # ШАГ 6: Расчёт качества данных
         # ================================================
@@ -235,6 +218,28 @@ async def upload_file(file: UploadFile = File(...),
         if mapper_output_file and os.path.exists(mapper_output_file):
             os.remove(mapper_output_file)
             print(f"Удалён промежуточный файл маппера: {mapper_output_file}")
+
+        # ================================================
+        # ШАГ 7: Формирование файла Excel
+        # ================================================
+        print("\n" + "="*60)
+        print("Формирование файла Excel")
+        print("="*60)
+
+        if download == True:
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                df.to_excel(writer, index=False, sheet_name="Cleaned Data")
+            output.seek(0)
+
+            headers = {
+                "Content-Disposition": f"attachment; filename=cleaned_{file.filename.rsplit('.', 1)[0]}.xlsx"
+            }
+            return StreamingResponse(
+                output,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers=headers
+            )
 
         return {
             "status": mapper_result["status"],
