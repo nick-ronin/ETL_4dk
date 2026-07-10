@@ -6,6 +6,8 @@ API для загрузки Excel/CSV файлов.
 import math
 import os
 import tempfile
+import mimetypes
+from datetime import datetime
 
 import pandas as pd
 from fastapi import APIRouter
@@ -68,10 +70,15 @@ async def upload_file(file: UploadFile = File(...),
     4. Нормализация данных (очистка ИНН, телефонов, названий)
     5. Поиск коллизий/дубликатов
     6. Оценка качества результата
-    7. Возврат результата в JSON
+    7. Возврат результата в Excel-файлах
     """
     extension = os.path.splitext(file.filename)[1]
     temp_path = None  # инициализируем заранее, чтобы избежать NameError
+
+    source_name = file.filename
+    source_type = source_name.split('.')[1]
+    now = datetime.now()
+    source_date = now.strftime("%d-%m-%Y")
 
     try:
         # Сохраняем загруженный файл во временный файл
@@ -206,10 +213,16 @@ async def upload_file(file: UploadFile = File(...),
         UNIQUENESS (Уникальность) = {quality_report['metrics'].get("uniqueness")}
         ACCURACY (Точность / Валидность) = {quality_report['metrics'].get("accuracy")}
         CONSISTENCY (Согласованность) = {quality_report['metrics'].get("consistency")}''')
-
-        # TODO: заполнять source name и source date по имени файла и дате
         
-        # raw_data = df.to_dict(orient="records")
+        raw_data = df.to_dict(orient="records")
+
+        for item in raw_data:
+            item["source_type"] = source_type
+            item["source_name"] = source_name
+            item["source_date"] = source_date
+
+        # TODO: формировать id по сегодняшней дате и порядковому номеру
+
         # clean_data = clean_json_value(raw_data)
 
         clean_data = export_with_report(df)
