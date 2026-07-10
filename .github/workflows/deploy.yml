@@ -1,6 +1,24 @@
-name: api
+name: Deploy to production
 
 on:
   push:
     branches:
-      - misha
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            cd /var/lib/uvicorn/ETL_4dk
+            git pull origin dev
+            /var/lib/uvicorn/ETL_4dk/venv/bin/pip install -r requirements.txt
+            systemctl restart uvicorn
