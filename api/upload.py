@@ -13,6 +13,7 @@ from fastapi import File
 from fastapi import HTTPException
 from fastapi import UploadFile
 
+
 # loader, mapper, validator
 from service.source_processing.source_loader import process_uploaded_file
 from service.source_processing.source_mapper import process_file, MVP_COLUMNS
@@ -27,6 +28,12 @@ from service.deduplicator.get_duplicates import get_duplicates
 from service.quality.quality import calculate_data_quality_score
 
 from service.exporter.exporter import export_with_report
+
+# вывод файла
+from io import BytesIO
+from fastapi.responses import StreamingResponse
+from typing import Optional
+from fastapi import Query
 
 router = APIRouter(
     prefix="/upload",
@@ -51,7 +58,8 @@ def clean_json_value(obj):
 
 
 @router.post("/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...),
+    download: Optional[bool] = Query(False, description="True-Excel-файл, False-JSON")):
     """
     ПАЙПЛАЙН ОБРАБОТКИ ФАЙЛА:
     1. Загрузка и нормализация колонок (SourceLoader)
@@ -167,6 +175,23 @@ async def upload_file(file: UploadFile = File(...)):
         print(f"✓ Отчёт сохранён: {dedup_result['collisions_file']}")
         print(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
 
+
+        # ================================================
+        # вывод файла
+        if download == True:
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                df.to_excel(writer, index=False, sheet_name="Cleaned Data")
+            output.seek(0)
+
+            headers = {
+                "Content-Disposition": f"attachment; filename=cleaned_{file.filename.rsplit('.', 1)[0]}.xlsx"
+            }
+            return StreamingResponse(
+                output,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers=headers
+            )
         # ================================================
         # ШАГ 6: Расчёт качества данных
         # ================================================
