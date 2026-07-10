@@ -7,7 +7,7 @@ def get_duplicates(df, columns, source_name="uploaded_file", output_dir="output"
     Создаёт отчёт о коллизиях (дубликатах) с номерами строк в исходном файле.
     """
     df = df.copy()
-    df['Номер_строки_источник'] = df.index + 2
+    df['Номер_строки'] = df.index + 2
 
     collisions = []
     summary = {}
@@ -45,7 +45,7 @@ def get_duplicates(df, columns, source_name="uploaded_file", output_dir="output"
 
     # 2. Полные дубликаты (по всем колонкам)
     # Исключаем служебную колонку из сравнения
-    cols_for_full = [c for c in df.columns if c != 'Номер_строки_источник']
+    cols_for_full = [c for c in df.columns if c != 'Номер_строки']
     full_dupl_mask = df[cols_for_full].duplicated(keep=False)
 
     if full_dupl_mask.any():
@@ -75,7 +75,7 @@ def get_duplicates(df, columns, source_name="uploaded_file", output_dir="output"
     if collisions:
         collisions_df = pd.concat(collisions, ignore_index=False)
         # Переставляем служебные колонки в начало
-        service_cols = ['Источник', 'Номер_строки_источник', 'Группа_дубликата', 'Тип_дубликата', 'Поле', 'Значение_дубликата']
+        service_cols = ['Источник', 'Номер_строки', 'Группа_дубликата', 'Тип_дубликата', 'Поле', 'Значение_дубликата']
         other_cols = [c for c in collisions_df.columns if c not in service_cols]
         collisions_df = collisions_df[service_cols + other_cols]
         # Сортируем для удобства
