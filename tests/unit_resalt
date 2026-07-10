@@ -1,0 +1,25 @@
+(4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % pytest tests/unit --cov=service --cov-report=term-missing
+==================================================== test session starts =====================================================
+platform darwin -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/nana_vitol/4dk/ETL_4dk
+plugins: cov-7.1.0, anyio-4.14.1
+collected 11 items                                                                                                           
+
+tests/unit/test_exporter.py .                                                                                          [  9%]
+tests/unit/test_quality.py ..                                                                                          [ 27%]
+tests/unit/test_source_loader.py ......                                                                                [ 81%]
+tests/unit/test_source_mapper.py ..                                                                                    [100%]
+
+======================================================= tests coverage =======================================================
+_____________________________________ coverage: platform darwin, python 3.13.14-final-0 ______________________________________
+
+Name                                         Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------
+service/exporter/exporter.py                    43     25    42%   78-79, 103-142, 163-177, 200-206
+service/quality/quality.py                      49     15    69%   17, 31-32, 35, 57-58, 77-93
+service/source_processing/source_loader.py     113     67    41%   150-166, 197, 224-237, 247-268, 286, 344-394
+service/source_processing/source_mapper.py     111     73    34%   145-156, 166-172, 190, 243-252, 270-314, 343-371
+--------------------------------------------------------------------------
+TOTAL                                          316    180    43%
+===================================================== 11 passed in 0.27s =====================================================
+(4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % 
