@@ -8,16 +8,16 @@ from service.source_processing.source_mapper import MVP_COLUMNS
 
 def calculate_data_quality_score(df: pd.DataFrame, dedup_result: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Публичный метод для расчета качества данных.
+    Метод для расчета качества данных.
     Принимает: очищенный DataFrame (после нормализации) и результат дедупликации.
     Возвращает: детальные метрики и общий скор.
     """
     total_rows = len(df)
     if total_rows == 0:
-        return {"error": "Empty dataset", "overall_quality_score": 0}
+        return {"error": "Пустой датасет", "overall_quality_score": 0}
 
     # 1. COMPLETENESS (Полнота) - проверяем только обязательные колонки из ERD
-    # Какая доля ячеек в обязательных колонках НЕ пустая?
+    # Сколько ячеек из списка колонок ЗАПОЛНЕНЫ И НЕ ПУСТЫЕ
     existing_mvp = [col for col in MVP_COLUMNS if col in df.columns]
     if existing_mvp:
         # Считаем общее кол-во ячеек в этих колонках
@@ -26,9 +26,10 @@ def calculate_data_quality_score(df: pd.DataFrame, dedup_result: Dict[str, Any])
         non_empty_cells = 0
         for col in existing_mvp:
             non_empty_cells += df[col].notna().sum()  # pandas считает не-NaN
-            # Дополнительно убираем пустые строки ""
+            # Дополнительно убираем пустые строки "" и прочерки
             if df[col].dtype == 'object':
                 non_empty_cells -= (df[col] == "").sum()
+                non_empty_cells -= (df[col] == "-").sum()
         completeness_score = non_empty_cells / total_cells if total_cells > 0 else 0
     else:
         completeness_score = 0
@@ -40,6 +41,8 @@ def calculate_data_quality_score(df: pd.DataFrame, dedup_result: Dict[str, Any])
     uniqueness_score = 1 - (rows_affected / total_rows) if total_rows > 0 else 0
     # Если rows_affected == 0, то скор = 1.0
 
+    
+    # TODO: ПРОВЕРИТЬ ОТЛИЧАЕТСЯ ЛИ ПРИЗНАК ОТ ПРИЗНАКА 1 
     # 3. ACCURACY (Точность / Валидность) - проверяем, как сработали чистильщики
     # Логика: если после очистки в колонке остались пустые значения (None или ""),
     # значит исходные данные были невалидными (например, мусорный телефон).
@@ -49,19 +52,19 @@ def calculate_data_quality_score(df: pd.DataFrame, dedup_result: Dict[str, Any])
         if col in df.columns:
             # Считаем, сколько строк в этой колонке НЕ пустые после очистки
             non_empty = df[col].notna().sum()
-            # Если в колонке строки, убираем пустые строки ""
+            # Если в колонке строки, убираем пустые строки "" и прочерки
             if df[col].dtype == 'object':
                 non_empty -= (df[col] == "").sum()
+                non_empty -= (df[col] == "-").sum()
             ratio = non_empty / total_rows
             accuracy_checks.append(ratio)
-    
+    # TODO: почему
     # Если в данных вообще не было этих колонок — ставим среднюю оценку 0.8
     accuracy_score = sum(accuracy_checks) / len(accuracy_checks) if accuracy_checks else 0.8
 
     # 4. CONSISTENCY (Согласованность) - проверяем формат ключевых полей через готовые методы
     # Мы уже прогнали clean_inn, clean_phone и т.д. Если они вернули не None — формат ок.
-    # Но проще: проверим, есть ли в этих колонках мусор (цифры/буквы вне шаблона).
-    # Сделаем прокси-проверку: если длина строки в колонке "нормальная" (не выбивается)
+    # Проверка: если длина строки в колонке "нормальная" (не выбивается)
     consistency_scores = []
     for col in ['inn', 'phone', 'email']:
         if col in df.columns:
@@ -72,13 +75,15 @@ def calculate_data_quality_score(df: pd.DataFrame, dedup_result: Dict[str, Any])
             if len(lengths) > 1:
                 # Если стандартное отклонение маленькое (или средняя длина ~10 для ИНН/телефона)
                 mean_len = lengths.mean()
+                # TODO: пересмотреть логику проверки
                 # Если средняя длина в районе ожидаемой (ИНН ~10, телефон ~11, email ~15-20)
                 if ('inn' in col and 8 < mean_len < 14) or \
                    ('phone' in col and 9 < mean_len < 14) or \
                    ('email' in col and 8 < mean_len < 30):
+                    # TODO: почему
                     col_score = 0.95  # почти идеально
                 else:
-                    # Считаем % записей, длина которых близка к средней (в пределах 3 сигм)
+                    # Считаем % записей, длина которых близка к средней (в пределах 3 сигм) ???????? каких сигм
                     std = lengths.std()
                     if std > 0:
                         within = ((lengths - mean_len).abs() <= 3 * std).sum()
@@ -97,12 +102,12 @@ def calculate_data_quality_score(df: pd.DataFrame, dedup_result: Dict[str, Any])
     return {
         "total_rows": total_rows,
         "metrics": {
-            "completeness": round(completeness_score, 4),   # Насколько заполнены поля
-            "uniqueness": round(uniqueness_score, 4),       # Насколько нет дублей
-            "accuracy": round(accuracy_score, 4),           # Насколько данные валидны
-            "consistency": round(consistency_score, 4),     # Насколько единообразны
+            "completeness": round(completeness_score, 2),   # Насколько заполнены поля
+            "uniqueness": round(uniqueness_score, 2),       # Насколько нет дублей
+            "accuracy": round(accuracy_score, 2),           # Насколько данные валидны
+            "consistency": round(consistency_score, 2),     # Насколько единообразны
         },
-        "overall_quality_score": round(overall, 4),
+        "overall_quality_score": round(overall, 2),
         "details": {
             "duplicate_rows_affected": rows_affected,
             "checked_columns": existing_mvp

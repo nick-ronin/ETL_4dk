@@ -26,6 +26,8 @@ from service.deduplicator.get_duplicates import get_duplicates
 # data quality score
 from service.quality.quality import calculate_data_quality_score
 
+from service.exporter.exporter import export_with_report
+
 router = APIRouter(
     prefix="/upload",
     tags=["Upload"]
@@ -82,7 +84,7 @@ async def upload_file(file: UploadFile = File(...)):
 
         upload_result = process_uploaded_file(
             file_path=temp_path,
-            required_columns=MVP_COLUMNS,
+            required_columns=MVP_COLUMNS, #TODO: протестить с erd_columns
             save_output=True, 
             output_folder="output"
         )
@@ -110,7 +112,7 @@ async def upload_file(file: UploadFile = File(...)):
 
         mapper_result = process_file(
             input_file_path=normalised_file_path,
-            required_columns=MVP_COLUMNS,
+            required_columns=MVP_COLUMNS, #TODO: протестить с erd_columns
             output_folder="output"
         )
 
@@ -130,6 +132,7 @@ async def upload_file(file: UploadFile = File(...)):
         df = normalize_company_names(df)
         print("✓ Названия компаний нормализованы")
 
+        # точно посмотреть че делает apply
         df['inn'] = df['inn'].apply(clean_inn)
         print("✓ ИНН очищены")
         
@@ -150,7 +153,8 @@ async def upload_file(file: UploadFile = File(...)):
         print("="*60)
 
         dup_columns = ['inn', 'email', 'phone', 'short_name']
-        # Если каких-то нет, можно динамически собрать из имеющихся
+        
+        # ХЗ ЧЕ ЗА КОД
         dup_columns = [c for c in dup_columns if c in df.columns]
 
         dedup_result = get_duplicates(
@@ -164,14 +168,26 @@ async def upload_file(file: UploadFile = File(...)):
         print(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
 
         # ================================================
-        # ШАГ 6: Формирование ответа
+        # ШАГ 6: Расчёт качества данных
         # ================================================
         print("\n" + "="*60)
-        print("Формирование JSON-ответа")
+        print("Расчёт качества данных")
         print("="*60)
+         
+        quality_report = calculate_data_quality_score(df, dedup_result)
+        print(f'''✓ Quality Score рассчитан: {quality_report['overall_quality_score']}
+        Детально:
+        COMPLETENESS (Полнота) = {quality_report['metrics'].get("completeness")}
+        UNIQUENESS (Уникальность) = {quality_report['metrics'].get("uniqueness")}
+        ACCURACY (Точность / Валидность) = {quality_report['metrics'].get("accuracy")}
+        CONSISTENCY (Согласованность) = {quality_report['metrics'].get("consistency")}''')
 
-        raw_data = df.to_dict(orient="records")
-        clean_data = clean_json_value(raw_data)
+        # TODO: заполнять source name и source date по имени файла и дате
+        
+        # raw_data = df.to_dict(orient="records")
+        # clean_data = clean_json_value(raw_data)
+
+        clean_data = export_with_report(df)
 
         if normalised_file_path and os.path.exists(normalised_file_path):
             os.remove(normalised_file_path)
@@ -181,14 +197,6 @@ async def upload_file(file: UploadFile = File(...)):
         if mapper_output_file and os.path.exists(mapper_output_file):
             os.remove(mapper_output_file)
             print(f"Удалён промежуточный файл маппера: {mapper_output_file}")
-         
-        quality_report = calculate_data_quality_score(df, dedup_result)
-        print(f'''✓ Quality Score рассчитан: {quality_report['overall_quality_score']}
-Детальн:
-COMPLETENESS (Полнота) = {quality_report['metrics'].get("completeness")}
-UNIQUENESS (Уникальность) = {quality_report['metrics'].get("uniqueness")}
-ACCURACY (Точность / Валидность) = {quality_report['metrics'].get("accuracy")}
-CONSISTENCY (Согласованность) = {quality_report['metrics'].get("consistency")}''')
 
         return {
             "status": mapper_result["status"],

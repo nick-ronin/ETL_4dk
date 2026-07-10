@@ -152,7 +152,7 @@ def clean_short_name(name):
         'Picaso 3d'                 → 'PICASO 3D'
         'А-сбыт, торговая компания' → 'А-СБЫТ'
     """
-    if pd.isna(name) or not isinstance(name, str):
+    if pd.isna(name):
         return ''
     
     name = name.strip()
@@ -229,7 +229,7 @@ def clean_full_name(name):
         'ООО ПО СМЗ'
             → 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ ПРОИЗВОДСТВЕННОЕ ОБЪЕДИНЕНИЕ СМЗ'
     """
-    if pd.isna(name) or not isinstance(name, str):
+    if pd.isna(name):
         return ''
     
     name = name.strip()
