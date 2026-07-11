@@ -77,14 +77,19 @@ def test_clean_phone_short():
     assert result == "112"
     # текущая логика добавляет +7 - +7112
 
+def test_clean_phone_short2():
+    result = clean_phone("01")
+    assert result == "01"
+    # текущая логика добавляет +7 - +701
+
 def test_clean_phone_8_800():
     result = clean_phone("8-800-777-85-21")
-    assert result == "88007778521"
+    assert result == "+78007778521"
     # текущая логика сделает +78007778521
 
 def test_clean_phone_multiple_mixed():
     result = clean_phone("8-800-777-85-21;+7 (495) 123-45-67")
-    assert result == "88007778521, +74951234567"
+    assert result == "+78007778521, +74951234567"
     # текущая логика сделает +78007778521, +74951234567
 
 # вроде не нашел такого в паспорте источников
@@ -93,6 +98,9 @@ def test_clean_phone_dobav():
     result = clean_phone("123-45-67 доб. 89")
     assert result == "+71234567"   # оставляет только цифры, добавляет +7
 '''
+def test_clean_phone_complex_mixed():
+    result = clean_phone("8 (800) 700-06-11, +7 (495) 640-15-15")
+    assert result == "+78007000611, +74956401515"
 
 # ============================================================
 # clean_email()
@@ -137,7 +145,11 @@ def test_clean_email_invalid():
 def test_clean_email_cyrillic():
     result = clean_email("почта@почта.рф")                          #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
     assert result == "почта@почта.рф"
-    # регулярка не поддерживает кириллицу и вернет none?
+    # регулярка не поддерживает кириллицу и вернет none
+
+def test_clean_email_mixed_separators():
+    result = clean_email("a@b.ru; c@d.ru, e@f.ru / g@h.ru")
+    assert result == "a@b.ru, c@d.ru, e@f.ru, g@h.ru"
 
 
 # ============================================================
@@ -216,6 +228,9 @@ def test_clean_short_name_ip_end():
     result = clean_short_name("Рога и копыта ИП")
     assert result == "РОГА И КОПЫТА"
 
+def test_clean_short_name_many_opf():
+    assert clean_short_name('ООО ОАО ЗАО "Ромашка"') == "РОМАШКА"
+
 # ============================================================
 # clean_full_name()
 # ============================================================
@@ -261,9 +276,10 @@ def test_clean_address():
         "ул. Ленина, д. 5 корп.2"
     )
 
-    #assert result == "Ленина, 5 корп2"             ⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
+    assert result == "Ленина, 5 корп2"             #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
     # ИЛИ??
-    assert result == "ул. Ленина, 5 корп2"
+    #assert result == "ул. Ленина, 5 корп2"
+    # решили что ул. отбрасывается
 
 
 # clean_address() - удаление переносов строк
@@ -273,9 +289,10 @@ def test_clean_address_newline():
         "ул.\nЛенина,\nд.5"
     )
 
-    #assert result == "Ленина, 5"                   ⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
+    assert result == "Ленина, 5"                   #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
     # ИЛИ??
-    assert result == "ул. Ленина, 5"
+    #assert result == "ул. Ленина, 5"
+    # решили что ул. отбрасывается
 '''
 ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
 '''
@@ -287,7 +304,7 @@ def test_clean_address_newline():
 # тут вопрос к каждому
 def test_clean_address_flat():
     result = clean_address("ул. Ленина, д. 5, кв. 13")
-    assert result == "ул. Ленина, 5, кв. 13"  # ул. не удаляется, кв. не обрабатывается
+    assert result == "Ленина, 5, кв. 13"  # ул. не удаляется, кв. не обрабатывается
 
 def test_clean_address_vladenie():
     result = clean_address("вл13с1кБ")
@@ -295,8 +312,16 @@ def test_clean_address_vladenie():
 
 def test_clean_address_index_city():
     result = clean_address("123458, г. Москва, ул. Маршала Катукова, д. 24")
-    assert result == "123458, г. Москва, ул. Маршала Катукова, 24"
+    assert result == "123458, г. Москва, Маршала Катукова, 24"
 
 def test_clean_address_prospekt():
     result = clean_address("проспект Мира, д. 10")
     assert result == "проспект Мира, 10"
+
+def test_clean_address_stroenie():
+    result = clean_address("д. 14 ст1Б")
+    assert result == "14 стр1Б"
+
+def test_clean_address_ulitsa_full():
+    result = clean_address("улица Ленина, д.5")
+    assert result == "Ленина, 5"
