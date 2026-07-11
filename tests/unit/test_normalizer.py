@@ -211,6 +211,10 @@ def test_clean_short_name_opf_end():
     result = clean_short_name("Рога и копыта ООО")
     assert result == "РОГА И КОПЫТА"
 
+# ИП в конце а не в начале - такое есть в паспорте?        #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
+def test_clean_short_name_ip_end():
+    result = clean_short_name("Рога и копыта ИП")
+    assert result == "РОГА И КОПЫТА"
 
 # ============================================================
 # clean_full_name()

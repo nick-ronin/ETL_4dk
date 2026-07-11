@@ -2,9 +2,15 @@ import pandas as pd
 
 from service.source_processing.source_mapper import (
     filter_columns,
+    load_file,
+    process_file
 )
 
-# filter_columns() - удаление лишних колонок
+# ============================================================
+# filter_columns
+# ============================================================
+
+# удаление лишних колонок
 def test_filter_columns_removes_extra():
 
     df = pd.DataFrame(
@@ -27,7 +33,7 @@ def test_filter_columns_removes_extra():
     assert "случайный заголовок1" not in filtered.columns
     assert "случайный_заголовок2" not in filtered.columns
 
-# filter_columns() - добавление отсутствующих
+# добавление отсутствующих
 def test_filter_columns_adds_missing():
 
     df = pd.DataFrame(
@@ -52,3 +58,27 @@ def test_filter_columns_adds_missing():
 
     assert filtered["email"].isna().all()
     assert filtered["phone"].isna().all()
+
+# ============================================================
+# load_file()
+# ============================================================
+
+def test_load_file_mapper(tmp_path):
+    df = pd.DataFrame({"inn": ["123"]})
+    file_path = tmp_path / "test.xlsx"
+    df.to_excel(file_path, index=False)
+    result = load_file(str(file_path))
+    assert result.equals(df)
+
+# ============================================================
+# process_file()
+# ============================================================
+
+# создадим минимальный Excel с колонкой inn
+def test_process_file(tmp_path):
+    df = pd.DataFrame({"inn": ["1234567890"]})
+    input_path = tmp_path / "standard_test.xlsx"
+    df.to_excel(input_path, index=False)
+    result = process_file(str(input_path), required_columns=["inn"], output_folder=str(tmp_path))
+    assert result["status"] == "OK"
+    assert result["df"] is not None
