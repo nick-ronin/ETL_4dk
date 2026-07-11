@@ -6,10 +6,9 @@ API для загрузки Excel/CSV файлов.
 import math
 import os
 import tempfile
-import mimetypes
+import zipfile
 from datetime import datetime
 
-import pandas as pd
 from fastapi import APIRouter
 from fastapi import File
 from fastapi import HTTPException
@@ -29,7 +28,7 @@ from service.deduplicator.get_duplicates import get_duplicates
 # data quality score
 from service.quality.quality import calculate_data_quality_score
 
-from service.exporter.exporter import export_with_report
+from service.exporter.exporter import export_from_mapper, export_to_excel
 
 # вывод файла
 from io import BytesIO
@@ -208,7 +207,15 @@ async def upload_file(file: UploadFile = File(...),
 
         # clean_data = clean_json_value(raw_data)
 
-        clean_data = export_with_report(df)
+        mapper_export_result = export_from_mapper(
+            mapper_result,
+            output_folder="output"
+        )
+
+        if mapper_export_result["status"] == "ERROR":
+            raise HTTPException(status_code=500, detail=mapper_export_result.get("error", "Ошибка экспорта mapper"))
+
+        clean_data = mapper_export_result
 
         if normalised_file_path and os.path.exists(normalised_file_path):
             os.remove(normalised_file_path)
@@ -226,18 +233,39 @@ async def upload_file(file: UploadFile = File(...),
         print("Формирование файла Excel")
         print("="*60)
 
-        if download == True:
+        if download:
+            excel_export_result = export_to_excel(
+                df,
+                output_folder="output",
+                filename="cleaned_data"
+            )
+
+            if excel_export_result["status"] == "ERROR":
+                raise HTTPException(status_code=500, detail=excel_export_result.get("error", "Ошибка экспорта Excel"))
+
+            archive_files = [
+                mapper_export_result.get("main_file"),
+                mapper_export_result.get("report_file"),
+                dedup_result.get("collisions_file"),
+                excel_export_result.get("file_path"),
+            ]
+
+            missing_files = [path for path in archive_files if not path or not os.path.exists(path)]
+            if missing_files:
+                raise HTTPException(status_code=500, detail=f"Не удалось собрать ZIP: отсутствуют файлы {missing_files}")
+
             output = BytesIO()
-            with pd.ExcelWriter(output, engine="openpyxl") as writer:
-                df.to_excel(writer, index=False, sheet_name="Cleaned Data")
+            with zipfile.ZipFile(output, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for file_path in archive_files:
+                    archive.write(file_path, arcname=os.path.basename(file_path))
             output.seek(0)
 
             headers = {
-                "Content-Disposition": f"attachment; filename=cleaned_{file.filename.rsplit('.', 1)[0]}.xlsx"
+                "Content-Disposition": f"attachment; filename=cleaned_{file.filename.rsplit('.', 1)[0]}.zip"
             }
             return StreamingResponse(
                 output,
-                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                media_type="application/zip",
                 headers=headers
             )
 
