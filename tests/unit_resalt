@@ -4,58 +4,64 @@ platform darwin -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0 -- /Users/nana_vit
 cachedir: .pytest_cache
 rootdir: /Users/nana_vitol/4dk/ETL_4dk
 plugins: cov-7.1.0, anyio-4.14.1
-collected 50 items                                                                                   
+collected 56 items                                                                                   
 
-tests/unit/test_deduplicator.py::test_duplicates_none PASSED                                   [  2%]
-tests/unit/test_deduplicator.py::test_duplicates_partial PASSED                                [  4%]
-tests/unit/test_deduplicator.py::test_duplicates_full PASSED                                   [  6%]
+tests/unit/test_deduplicator.py::test_duplicates_none PASSED                                   [  1%]
+tests/unit/test_deduplicator.py::test_duplicates_partial PASSED                                [  3%]
+tests/unit/test_deduplicator.py::test_duplicates_full PASSED                                   [  5%]
+tests/unit/test_deduplicator.py::test_duplicates_with_nan PASSED                               [  7%]
 tests/unit/test_exporter.py::test_export_to_excel PASSED                                       [  8%]
 tests/unit/test_exporter_extra.py::test_export_simple PASSED                                   [ 10%]
 tests/unit/test_exporter_extra.py::test_export_mapper_error PASSED                             [ 12%]
 tests/unit/test_exporter_extra.py::test_export_mapper_empty PASSED                             [ 14%]
 tests/unit/test_exporter_extra.py::test_export_mapper_ok PASSED                                [ 16%]
-tests/unit/test_normalizer.py::test_clean_phone_replace_8 PASSED                               [ 18%]
-tests/unit/test_normalizer.py::test_clean_phone_keep_plus PASSED                               [ 20%]
-tests/unit/test_normalizer.py::test_clean_phone_multiple PASSED                                [ 22%]
-tests/unit/test_normalizer.py::test_clean_phone_separators PASSED                              [ 24%]
-tests/unit/test_normalizer.py::test_clean_phone_empty PASSED                                   [ 26%]
-tests/unit/test_normalizer.py::test_clean_phone_invalid PASSED                                 [ 28%]
-tests/unit/test_normalizer.py::test_clean_phone_comment PASSED                                 [ 30%]
-tests/unit/test_normalizer.py::test_clean_phone_short FAILED                                   [ 32%]
-tests/unit/test_normalizer.py::test_clean_phone_8_800 FAILED                                   [ 34%]
-tests/unit/test_normalizer.py::test_clean_phone_multiple_mixed FAILED                          [ 36%]
-tests/unit/test_normalizer.py::test_clean_email_single PASSED                                  [ 38%]
-tests/unit/test_normalizer.py::test_clean_email_multiple PASSED                                [ 40%]
-tests/unit/test_normalizer.py::test_clean_email_duplicates PASSED                              [ 42%]
-tests/unit/test_normalizer.py::test_clean_email_invalid PASSED                                 [ 44%]
-tests/unit/test_normalizer.py::test_clean_email_cyrillic FAILED                                [ 46%]
-tests/unit/test_normalizer.py::test_clean_inn_ok PASSED                                        [ 48%]
-tests/unit/test_normalizer.py::test_clean_inn_symbols PASSED                                   [ 50%]
-tests/unit/test_normalizer.py::test_clean_inn_wrong_length PASSED                              [ 52%]
-tests/unit/test_normalizer.py::test_clean_inn_zero_prefix PASSED                               [ 54%]
-tests/unit/test_normalizer.py::test_clean_short_name PASSED                                    [ 56%]
-tests/unit/test_normalizer.py::test_clean_short_name_ip PASSED                                 [ 58%]
-tests/unit/test_normalizer.py::test_clean_short_name_comma PASSED                              [ 60%]
-tests/unit/test_normalizer.py::test_clean_short_name_opf_end PASSED                            [ 62%]
-tests/unit/test_normalizer.py::test_clean_full_name_expand PASSED                              [ 64%]
-tests/unit/test_normalizer.py::test_clean_full_name_already_expanded PASSED                    [ 66%]
-tests/unit/test_normalizer.py::test_clean_full_name_quotes PASSED                              [ 68%]
-tests/unit/test_normalizer.py::test_clean_address PASSED                                       [ 70%]
-tests/unit/test_normalizer.py::test_clean_address_newline PASSED                               [ 72%]
-tests/unit/test_normalizer.py::test_clean_address_flat PASSED                                  [ 74%]
-tests/unit/test_normalizer.py::test_clean_address_vladenie PASSED                              [ 76%]
-tests/unit/test_normalizer.py::test_clean_address_index_city PASSED                            [ 78%]
-tests/unit/test_normalizer.py::test_clean_address_prospekt PASSED                              [ 80%]
-tests/unit/test_quality.py::test_quality_score_range PASSED                                    [ 82%]
-tests/unit/test_quality.py::test_quality_metrics_exist PASSED                                  [ 84%]
-tests/unit/test_source_loader.py::test_map_columns_known_fields PASSED                         [ 86%]
-tests/unit/test_source_loader.py::test_map_columns_unknown_field PASSED                        [ 88%]
-tests/unit/test_source_loader.py::test_normalize_columns PASSED                                [ 90%]
-tests/unit/test_source_loader.py::test_validate_required_columns_ok PASSED                     [ 92%]
-tests/unit/test_source_loader.py::test_validate_required_columns_warning PASSED                [ 94%]
-tests/unit/test_source_loader.py::test_validate_multiple_required_columns PASSED               [ 96%]
-tests/unit/test_source_mapper.py::test_filter_columns_removes_extra PASSED                     [ 98%]
-tests/unit/test_source_mapper.py::test_filter_columns_adds_missing PASSED                      [100%]
+tests/unit/test_normalizer.py::test_clean_phone_replace_8 PASSED                               [ 17%]
+tests/unit/test_normalizer.py::test_clean_phone_keep_plus PASSED                               [ 19%]
+tests/unit/test_normalizer.py::test_clean_phone_multiple PASSED                                [ 21%]
+tests/unit/test_normalizer.py::test_clean_phone_separators PASSED                              [ 23%]
+tests/unit/test_normalizer.py::test_clean_phone_empty PASSED                                   [ 25%]
+tests/unit/test_normalizer.py::test_clean_phone_invalid PASSED                                 [ 26%]
+tests/unit/test_normalizer.py::test_clean_phone_comment PASSED                                 [ 28%]
+tests/unit/test_normalizer.py::test_clean_phone_short FAILED                                   [ 30%]
+tests/unit/test_normalizer.py::test_clean_phone_8_800 FAILED                                   [ 32%]
+tests/unit/test_normalizer.py::test_clean_phone_multiple_mixed FAILED                          [ 33%]
+tests/unit/test_normalizer.py::test_clean_email_single PASSED                                  [ 35%]
+tests/unit/test_normalizer.py::test_clean_email_multiple PASSED                                [ 37%]
+tests/unit/test_normalizer.py::test_clean_email_duplicates PASSED                              [ 39%]
+tests/unit/test_normalizer.py::test_clean_email_invalid PASSED                                 [ 41%]
+tests/unit/test_normalizer.py::test_clean_email_cyrillic FAILED                                [ 42%]
+tests/unit/test_normalizer.py::test_clean_inn_ok PASSED                                        [ 44%]
+tests/unit/test_normalizer.py::test_clean_inn_symbols PASSED                                   [ 46%]
+tests/unit/test_normalizer.py::test_clean_inn_wrong_length PASSED                              [ 48%]
+tests/unit/test_normalizer.py::test_clean_inn_zero_prefix PASSED                               [ 50%]
+tests/unit/test_normalizer.py::test_clean_short_name PASSED                                    [ 51%]
+tests/unit/test_normalizer.py::test_clean_short_name_ip PASSED                                 [ 53%]
+tests/unit/test_normalizer.py::test_clean_short_name_comma PASSED                              [ 55%]
+tests/unit/test_normalizer.py::test_clean_short_name_opf_end PASSED                            [ 57%]
+tests/unit/test_normalizer.py::test_clean_full_name_expand PASSED                              [ 58%]
+tests/unit/test_normalizer.py::test_clean_full_name_already_expanded PASSED                    [ 60%]
+tests/unit/test_normalizer.py::test_clean_full_name_quotes PASSED                              [ 62%]
+tests/unit/test_normalizer.py::test_clean_address PASSED                                       [ 64%]
+tests/unit/test_normalizer.py::test_clean_address_newline PASSED                               [ 66%]
+tests/unit/test_normalizer.py::test_clean_address_flat PASSED                                  [ 67%]
+tests/unit/test_normalizer.py::test_clean_address_vladenie PASSED                              [ 69%]
+tests/unit/test_normalizer.py::test_clean_address_index_city PASSED                            [ 71%]
+tests/unit/test_normalizer.py::test_clean_address_prospekt PASSED                              [ 73%]
+tests/unit/test_quality.py::test_quality_score_range PASSED                                    [ 75%]
+tests/unit/test_quality.py::test_quality_metrics_exist PASSED                                  [ 76%]
+tests/unit/test_quality.py::test_quality_empty_df PASSED                                       [ 78%]
+tests/unit/test_quality.py::test_quality_no_mvp_columns PASSED                                 [ 80%]
+tests/unit/test_quality.py::test_quality_all_nan FAILED                                        [ 82%]
+tests/unit/test_source_loader.py::test_map_columns_known_fields PASSED                         [ 83%]
+tests/unit/test_source_loader.py::test_map_columns_unknown_field PASSED                        [ 85%]
+tests/unit/test_source_loader.py::test_normalize_columns PASSED                                [ 87%]
+tests/unit/test_source_loader.py::test_validate_required_columns_ok PASSED                     [ 89%]
+tests/unit/test_source_loader.py::test_validate_required_columns_warning PASSED                [ 91%]
+tests/unit/test_source_loader.py::test_validate_multiple_required_columns PASSED               [ 92%]
+tests/unit/test_source_mapper.py::test_filter_columns_removes_extra PASSED                     [ 94%]
+tests/unit/test_source_mapper.py::test_filter_columns_adds_missing PASSED                      [ 96%]
+tests/unit/test_source_mapper.py::test_load_file_mapper FAILED                                 [ 98%]
+tests/unit/test_source_mapper.py::test_process_file PASSED                                     [100%]
 
 ============================================== FAILURES ==============================================
 _______________________________________ test_clean_phone_short _______________________________________
@@ -104,26 +110,59 @@ _____________________________________ test_clean_email_cyrillic ________________
 E       AssertionError: assert None == 'почта@почта.рф'
 
 tests/unit/test_normalizer.py:139: AssertionError
+________________________________________ test_quality_all_nan ________________________________________
+
+    def test_quality_all_nan():
+        df = pd.DataFrame({"inn": [None, None], "phone": [None, None],
+                           "email": [None, None], "address": [None, None]})
+        res = calculate_data_quality_score(df, {"rows_affected": 0})
+        assert res["metrics"]["completeness"] == 0.0
+        assert res["metrics"]["accuracy"] == 0.0
+>       assert res["metrics"]["consistency"] == 1.0  # все "nan" -> длина 3, считается единообразным
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0.5 == 1.0
+
+tests/unit/test_quality.py:75: AssertionError
+_______________________________________ test_load_file_mapper ________________________________________
+
+tmp_path = PosixPath('/private/var/folders/fr/k90bcg1n7_z6cx__qbqz1g5m0000gn/T/pytest-of-nana_vitol/pytest-16/test_load_file_mapper0')
+
+    def test_load_file_mapper(tmp_path):
+        df = pd.DataFrame({"inn": ["123"]})
+        file_path = tmp_path / "test.xlsx"
+        df.to_excel(file_path, index=False)
+        result = load_file(str(file_path))
+>       assert result.equals(df)
+E       assert False
+E        +  where False = equals(   inn\n0  123)
+E        +    where equals =    inn\n0  123.equals
+
+tests/unit/test_source_mapper.py:71: AssertionError
+---------------------------------------- Captured stdout call ----------------------------------------
+Загружен файл: test.xlsx
+  Строк: 1, колонок: 1
 ====================================== short test summary info =======================================
 FAILED tests/unit/test_normalizer.py::test_clean_phone_short - AssertionError: assert '+7112' == '112'
 FAILED tests/unit/test_normalizer.py::test_clean_phone_8_800 - AssertionError: assert '+78007778521' == '88007778521'
 FAILED tests/unit/test_normalizer.py::test_clean_phone_multiple_mixed - AssertionError: assert '+78007778521, +74951234567' == '88007778521, +74951234567'
 FAILED tests/unit/test_normalizer.py::test_clean_email_cyrillic - AssertionError: assert None == 'почта@почта.рф'
-==================================== 4 failed, 46 passed in 0.29s ====================================
+FAILED tests/unit/test_quality.py::test_quality_all_nan - assert 0.5 == 1.0
+FAILED tests/unit/test_source_mapper.py::test_load_file_mapper - assert False
+==================================== 6 failed, 50 passed in 0.38s ====================================
 (4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % pytest tests/unit --cov=service --cov-report=term-missing
 ======================================== test session starts =========================================
 platform darwin -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
 rootdir: /Users/nana_vitol/4dk/ETL_4dk
 plugins: cov-7.1.0, anyio-4.14.1
-collected 50 items                                                                                   
+collected 56 items                                                                                   
 
-tests/unit/test_deduplicator.py ...                                                            [  6%]
+tests/unit/test_deduplicator.py ....                                                           [  7%]
 tests/unit/test_exporter.py .                                                                  [  8%]
 tests/unit/test_exporter_extra.py ....                                                         [ 16%]
-tests/unit/test_normalizer.py .......FFF....F.................                                 [ 80%]
-tests/unit/test_quality.py ..                                                                  [ 84%]
-tests/unit/test_source_loader.py ......                                                        [ 96%]
-tests/unit/test_source_mapper.py ..                                                            [100%]
+tests/unit/test_normalizer.py .......FFF....F.................                                 [ 73%]
+tests/unit/test_quality.py ....F                                                               [ 82%]
+tests/unit/test_source_loader.py ......                                                        [ 92%]
+tests/unit/test_source_mapper.py ..F.                                                          [100%]
 
 ============================================== FAILURES ==============================================
 _______________________________________ test_clean_phone_short _______________________________________
@@ -172,6 +211,37 @@ _____________________________________ test_clean_email_cyrillic ________________
 E       AssertionError: assert None == 'почта@почта.рф'
 
 tests/unit/test_normalizer.py:139: AssertionError
+________________________________________ test_quality_all_nan ________________________________________
+
+    def test_quality_all_nan():
+        df = pd.DataFrame({"inn": [None, None], "phone": [None, None],
+                           "email": [None, None], "address": [None, None]})
+        res = calculate_data_quality_score(df, {"rows_affected": 0})
+        assert res["metrics"]["completeness"] == 0.0
+        assert res["metrics"]["accuracy"] == 0.0
+>       assert res["metrics"]["consistency"] == 1.0  # все "nan" -> длина 3, считается единообразным
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0.5 == 1.0
+
+tests/unit/test_quality.py:75: AssertionError
+_______________________________________ test_load_file_mapper ________________________________________
+
+tmp_path = PosixPath('/private/var/folders/fr/k90bcg1n7_z6cx__qbqz1g5m0000gn/T/pytest-of-nana_vitol/pytest-17/test_load_file_mapper0')
+
+    def test_load_file_mapper(tmp_path):
+        df = pd.DataFrame({"inn": ["123"]})
+        file_path = tmp_path / "test.xlsx"
+        df.to_excel(file_path, index=False)
+        result = load_file(str(file_path))
+>       assert result.equals(df)
+E       assert False
+E        +  where False = equals(   inn\n0  123)
+E        +    where equals =    inn\n0  123.equals
+
+tests/unit/test_source_mapper.py:71: AssertionError
+---------------------------------------- Captured stdout call ----------------------------------------
+Загружен файл: test.xlsx
+  Строк: 1, колонок: 1
 =========================================== tests coverage ===========================================
 _________________________ coverage: platform darwin, python 3.13.14-final-0 __________________________
 
@@ -180,15 +250,17 @@ Name                                         Stmts   Miss  Cover   Missing
 service/deduplicator/get_duplicates.py          72      2    97%   18, 117
 service/exporter/exporter.py                    43      4    91%   78-79, 141-142
 service/normalizer/normalizer.py               113     17    85%   13, 56, 102, 119, 156, 177, 233, 271-285, 306
-service/quality/quality.py                      49     15    69%   17, 31-32, 35, 57-58, 77-93
+service/quality/quality.py                      49      9    82%   77-93
 service/source_processing/source_loader.py     113     67    41%   150-166, 197, 224-237, 247-268, 286, 344-394
-service/source_processing/source_mapper.py     111     73    34%   145-156, 166-172, 190, 243-252, 270-314, 343-371
+service/source_processing/source_mapper.py     111     40    64%   145-156, 167, 190, 275, 309-314, 343-371
 --------------------------------------------------------------------------
-TOTAL                                          501    178    64%
+TOTAL                                          501    139    72%
 ====================================== short test summary info =======================================
 FAILED tests/unit/test_normalizer.py::test_clean_phone_short - AssertionError: assert '+7112' == '112'
 FAILED tests/unit/test_normalizer.py::test_clean_phone_8_800 - AssertionError: assert '+78007778521' == '88007778521'
 FAILED tests/unit/test_normalizer.py::test_clean_phone_multiple_mixed - AssertionError: assert '+78007778521, +74951234567' == '88007778521, +74951234567'
 FAILED tests/unit/test_normalizer.py::test_clean_email_cyrillic - AssertionError: assert None == 'почта@почта.рф'
-==================================== 4 failed, 46 passed in 0.55s ====================================
+FAILED tests/unit/test_quality.py::test_quality_all_nan - assert 0.5 == 1.0
+FAILED tests/unit/test_source_mapper.py::test_load_file_mapper - assert False
+==================================== 6 failed, 50 passed in 0.53s ====================================
 (4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % 

@@ -6,7 +6,10 @@ from service.source_processing.source_loader import (
     validate_required_columns,
 )
 
-# Проверяем map_columns()
+# ============================================================
+# map_columns()
+# ============================================================
+
 def test_map_columns_known_fields():
     columns = [
         "ИНН",
@@ -30,7 +33,10 @@ def test_map_columns_unknown_field():
 
     assert mapping["Возраст"] == "Возраст"
 
-# Проверяем normalize_columns()
+# ============================================================
+# normalize_columns()
+# ============================================================
+
 def test_normalize_columns(sample_dataframe):
     df = normalize_columns(sample_dataframe)
 
@@ -41,7 +47,11 @@ def test_normalize_columns(sample_dataframe):
     assert "ИНН" not in df.columns
     assert "Телефон" not in df.columns
 
-# validate_required_columns() - есть обяз. колонка
+# ============================================================
+# validate_required_columns()
+# ============================================================
+
+# есть обяз. колонка
 def test_validate_required_columns_ok():
 
     df = pd.DataFrame(
@@ -54,7 +64,7 @@ def test_validate_required_columns_ok():
 
     assert result["status"] == "OK"
 
-# validate_required_columns() - нет обяз. колонка
+# нет обяз. колонка
 def test_validate_required_columns_warning():
 
     df = pd.DataFrame(
@@ -68,7 +78,7 @@ def test_validate_required_columns_warning():
     assert result["status"] == "WARNING"
     assert "inn" in result["missing_columns"]
 
-# validate_required_columns() - несколько обяз. полей
+# несколько обяз. полей
 def test_validate_multiple_required_columns():
 
     df = pd.DataFrame(
@@ -90,4 +100,3 @@ def test_validate_multiple_required_columns():
 
     assert "ogrn" in result["missing_columns"]
     assert "phone" in result["missing_columns"]
-
