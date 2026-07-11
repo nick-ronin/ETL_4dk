@@ -300,3 +300,5 @@ def test_clean_address_index_city():
 def test_clean_address_prospekt():
     result = clean_address("проспект Мира, д. 10")
     assert result == "проспект Мира, 10"
+
+# нужно добавит города?? регионы?? районы??
