@@ -255,12 +255,19 @@ service/source_processing/source_loader.py     113     67    41%   150-166, 197,
 service/source_processing/source_mapper.py     111     40    64%   145-156, 167, 190, 275, 309-314, 343-371
 --------------------------------------------------------------------------
 TOTAL                                          501    139    72%
+
+
+# ============================================================
+# РЕЗУЛЬТАТ
+# ============================================================
+
+
 ====================================== short test summary info =======================================
 FAILED tests/unit/test_normalizer.py::test_clean_phone_short - AssertionError: assert '+7112' == '112'
 FAILED tests/unit/test_normalizer.py::test_clean_phone_8_800 - AssertionError: assert '+78007778521' == '88007778521'
 FAILED tests/unit/test_normalizer.py::test_clean_phone_multiple_mixed - AssertionError: assert '+78007778521, +74951234567' == '88007778521, +74951234567'
 FAILED tests/unit/test_normalizer.py::test_clean_email_cyrillic - AssertionError: assert None == 'почта@почта.рф'
 FAILED tests/unit/test_quality.py::test_quality_all_nan - assert 0.5 == 1.0
-FAILED tests/unit/test_source_mapper.py::test_load_file_mapper - assert False
+FAILED tests/unit/test_source_mapper.py::test_load_file_mapper - assert False # кривой тест - не обращаем внимания!!!
 ==================================== 6 failed, 50 passed in 0.53s ====================================
 (4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % 
