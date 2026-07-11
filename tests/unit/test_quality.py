@@ -75,3 +75,28 @@ def test_quality_all_nan():
     assert res["metrics"]["consistency"] == 1.0  # все "nan" -> длина 3, считается единообразным
     assert res["metrics"]["uniqueness"] == 1.0
     assert abs(res["overall_quality_score"] - 0.5) < 0.01
+
+# Идеальное качество (все поля заполнены, без дублей)
+def test_quality_perfect_data():
+    df = pd.DataFrame({
+        "inn": ["1234567890", "0987654321"],
+        "phone": ["+79991234567", "+79001112233"],
+        "email": ["a@b.ru", "c@d.ru"],
+        "address": ["Ленина, 5", "Мира, 10"]
+    })
+    dedup = {"rows_affected": 0}
+    res = calculate_data_quality_score(df, dedup)
+    assert res["overall_quality_score"] == 1.0
+
+# при наличии дубликатов
+def test_quality_with_duplicates():
+    df = pd.DataFrame({
+        "inn": ["1234567890", "1234567890"],
+        "phone": ["+79991234567", "+79991234567"],
+        "email": ["a@b.ru", "a@b.ru"],
+        "address": ["Ленина, 5", "Ленина, 5"]
+    })
+    dedup = {"rows_affected": 2}
+    res = calculate_data_quality_score(df, dedup)
+    assert res["metrics"]["uniqueness"] == 0.0
+    assert res["overall_quality_score"] == 0.5

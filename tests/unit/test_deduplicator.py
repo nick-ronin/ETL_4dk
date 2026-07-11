@@ -62,3 +62,9 @@ def test_duplicates_with_nan(tmp_path):
         )
     assert result["rows_affected"] == 4
     # частичные дубликаты по "1" (2 строки) + полные дубликаты по "1" (ещё 2)
+
+# Пустой датафрейм
+def test_duplicates_empty_df(tmp_path):
+    df = pd.DataFrame()
+    result = get_duplicates(df, ["inn"], output_dir=tmp_path)
+    assert result["rows_affected"] == 0
