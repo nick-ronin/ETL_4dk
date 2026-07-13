@@ -42,8 +42,7 @@ def clean_phone(phone_raw):
             if digits.startswith('7'):
                 cleaned = '+' + digits
             else:
-                # На случай, если номер не содержит кода страны – добавляем '+7' (можно изменить по необходимости)
-                cleaned = '+7' + digits
+                cleaned = digits
 
         cleaned_parts.append(cleaned)
 
@@ -102,7 +101,7 @@ def clean_email(email_str):
         return email_str
 
     # Шаблон, который описывает, как должен выглядеть правильный email
-    pattern = r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+    pattern = r'(?i)[A-Za-zа-яё0-9._%+-]+@[A-Za-zа-яё0-9.-]+\.[A-Za-zа-яё]{2,}'
 
     # Режем длинную строку на кусочки, если там используются разделители: ; , / | или перенос строки
     parts = re.split(r'[;,/|\n]+', email_str)
@@ -302,7 +301,7 @@ def clean_address(address):
         "название улицы, номер дома стрномер корпномер"
     """
 
-    if pd.isna(address) or not isinstance(address, str):
+    if pd.isna(address):
         return address
 
     # убираем переносы и лишние пробелы
@@ -310,11 +309,7 @@ def clean_address(address):
     address = re.sub(r'\s+', ' ', address).strip()
 
     # нормализуем тип улицы
-    address = re.sub(
-        r'\b(улица|ул\.)\b',
-        '',
-        address
-    )
+    address = re.sub(r'\b(улица|ул\.)\s*', '', address)
 
     # приводим строение к стр1
     address = re.sub(
