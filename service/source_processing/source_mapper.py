@@ -6,17 +6,16 @@
 - Сопоставляет поля источника с единым стандартом (COLUMN_MAPPING)
 - Оставляет только колонки, соответствующие ERD / MVP
 - Добавляет отсутствующие колонки с пустыми значениями
-- Опционально сохраняет результат в Excel
 
 Автор: Шалатонин Кирилл Витальевич
 Дата: 08.07.2026
 """
 
 import pandas as pd
-import os
 from datetime import datetime
 
 from service.logger.logger import logger
+from service.source_processing.validator import validate_required_columns
 
 
 # ============================================================
@@ -227,33 +226,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df_renamed
 
 
-def validate_required_columns(df: pd.DataFrame,
-                              required_columns: list = None) -> dict:
-    """
-    Проверяет наличие обязательных колонок в DataFrame.
-    """
-    if required_columns is None:
-        required_columns = ['inn']
-
-    existing = [col for col in required_columns if col in df.columns]
-    missing = [col for col in required_columns if col not in df.columns]
-
-    result = {
-        'status': 'OK' if not missing else 'WARNING',
-        'required_columns': required_columns,
-        'existing_columns': existing,
-        'missing_columns': missing,
-        'message': f"Найдено {len(existing)} из {len(required_columns)} обязательных колонок"
-    }   
-    if missing:
-        result['message'] += f". Отсутствуют: {', '.join(missing)}"
-        logger.warning(f"ВНИМАНИЕ! Отсутствуют колонки: {', '.join(missing)}")
-    else:
-        logger.info("Все обязательные колонки присутствуют")
-
-    return result
-
-
 def filter_columns(df: pd.DataFrame,
                    required_columns: list = None) -> dict:
     """
@@ -296,21 +268,6 @@ def filter_columns(df: pd.DataFrame,
     }
 
 
-def save_to_excel(df: pd.DataFrame,
-                  output_folder: str = "output",
-                  base_filename: str = "filtered") -> str:
-    """Сохраняет DataFrame в Excel (опционально)."""
-    os.makedirs(output_folder, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{base_filename}_{timestamp}.xlsx"
-    file_path = os.path.join(output_folder, filename)
-
-    df.to_excel(file_path, index=False, engine='openpyxl')
-    logger.info(f"Файл сохранён: {file_path}")
-    logger.info(f"Строк: {len(df)}, колонок: {len(df.columns)}")
-    return file_path
-
-
 # ============================================================
 # 4. ГЛАВНАЯ ФУНКЦИЯ
 # ============================================================
@@ -320,14 +277,13 @@ def process_file(df: pd.DataFrame,
     """
     Принимает DataFrame (сырой, после source_loader),
     переименовывает колонки, фильтрует под ERD/MVP.
-    Опционально сохраняет результат в Excel.
 
     Параметры:
         df (pd.DataFrame): входные данные
         required_columns (list): список нужных колонок
 
     Возвращает:
-        dict: с ключами 'status', 'df', 'stats'
+        dict: с ключами 'status', 'df', 'validation_result', 'stats'
     """
     logger.info("=" * 60)
     logger.info("ЗАПУСК source_mapper")
@@ -340,7 +296,7 @@ def process_file(df: pd.DataFrame,
         # Шаг 1: переименование
         df = normalize_columns(df)
 
-        # Шаг 2: валидация обязательных колонок
+        # Шаг 2: валидация обязательных колонок (вынесена в validator)
         validation_result = validate_required_columns(df, required_columns)
 
         # Шаг 3: фильтрация
@@ -362,14 +318,11 @@ def process_file(df: pd.DataFrame,
         return result
 
     except Exception as e:
-        logger.info("=" * 60)
-        logger.info(f"ОШИБКА: {str(e)}")
-        logger.info("=" * 60)
+        logger.error(f"ОШИБКА: {str(e)}")
         return {
             'status': 'ERROR',
             'df': None,
             'validation_result': None,
             'stats': None,
-            'output_file': None,
             'error': str(e)
         }
