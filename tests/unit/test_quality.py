@@ -62,9 +62,9 @@ def test_quality_no_mvp_columns():
     res = calculate_data_quality_score(df, {"rows_affected": 0})
     assert res["metrics"]["completeness"] == 0.0
     assert res["metrics"]["accuracy"] == 0.8   # нет проверяемых колонок → 0.8
-    assert res["metrics"]["consistency"] == 0.8
+    assert res["metrics"]["consistency"] == 1.0
     assert res["metrics"]["uniqueness"] == 1.0  # rows_affected=0
-    assert abs(res["overall_quality_score"] - 0.65) < 0.01
+    assert abs(res["overall_quality_score"] - 0.7) < 0.01
 
 def test_quality_all_nan():
     df = pd.DataFrame({"inn": [None, None], "phone": [None, None],
@@ -99,4 +99,4 @@ def test_quality_with_duplicates():
     dedup = {"rows_affected": 2}
     res = calculate_data_quality_score(df, dedup)
     assert res["metrics"]["uniqueness"] == 0.0
-    assert res["overall_quality_score"] == 0.5
+    assert res["overall_quality_score"] == 0.75

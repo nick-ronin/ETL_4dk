@@ -1,4 +1,4 @@
-# services/quality.py
+# service/quality/quality.py
 import pandas as pd
 from typing import Dict, Any, List
 
@@ -6,106 +6,140 @@ from typing import Dict, Any, List
 # (чтобы проверять полноту только по ним, а не по всем)
 from service.source_processing.source_mapper import MVP_COLUMNS
 
+
 def calculate_data_quality_score(df: pd.DataFrame, dedup_result: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Метод для расчета качества данных.
-    Принимает: очищенный DataFrame (после нормализации) и результат дедупликации.
-    Возвращает: детальные метрики и общий скор.
+    Вычисляет обобщённую метрику качества данных на основе четырёх аспектов:
+    - Полнота (completeness) – доля заполненных ячеек среди обязательных колонок MVP_COLUMNS
+    - Уникальность (uniqueness) – на основе количества затронутых дубликатов из dedup_result
+    - Точность (accuracy) – доля непустых значений после очистки в ключевых полях (inn, phone, email, address)
+    - Согласованность (consistency) – единообразие длин значений в полях inn, phone, email
+
+    Параметры
+    ----------
+    df : pd.DataFrame
+        Очищенный (после нормализации) датафрейм с данными.
+    dedup_result : Dict[str, Any]
+        Результат работы дедубликатора; должен содержать ключ 'rows_affected' –
+        количество строк, участвовавших в коллизиях (дубликатах).
+
+    Возвращает
+    ----------
+    Dict[str, Any]
+        Словарь со следующими ключами:
+        - 'total_rows': общее количество строк в df
+        - 'metrics': словарь с оценками по шкале 0.0–1.0 для каждого аспекта:
+            'completeness', 'uniqueness', 'accuracy', 'consistency'
+        - 'overall_quality_score': итоговая оценка (среднее арифметическое четырёх метрик)
+        - 'details': дополнительная информация (число затронутых дубликатов, проверенные колонки)
+        Если датафрейм пуст, возвращается {'error': 'Пустой датасет', 'overall_quality_score': 0}.
     """
     total_rows = len(df)
     if total_rows == 0:
         return {"error": "Пустой датасет", "overall_quality_score": 0}
 
-    # 1. COMPLETENESS (Полнота) - проверяем только обязательные колонки из ERD
-    # Сколько ячеек из списка колонок ЗАПОЛНЕНЫ И НЕ ПУСТЫЕ
+    # ------------------------------------------------------------------
+    # 1. ПОЛНОТА (COMPLETENESS)
+    # Проверяем только колонки из MVP_COLUMNS (обязательные поля маппера).
+    # Считаем долю непустых ячеек среди этих колонок.
+    # ------------------------------------------------------------------
     existing_mvp = [col for col in MVP_COLUMNS if col in df.columns]
     if existing_mvp:
-        # Считаем общее кол-во ячеек в этих колонках
         total_cells = len(existing_mvp) * total_rows
-        # Считаем, сколько из них не пустые (не NaN и не пустая строка)
         non_empty_cells = 0
         for col in existing_mvp:
-            non_empty_cells += df[col].notna().sum()  # pandas считает не-NaN
-            # Дополнительно убираем пустые строки "" и прочерки
+            # notna() даёт True для всего, что не NaN
+            filled = df[col].notna().sum()
+            # Вычитаем пустые строки и прочерки (типичный мусор)
             if df[col].dtype == 'object':
-                non_empty_cells -= (df[col] == "").sum()
-                non_empty_cells -= (df[col] == "-").sum()
+                filled -= (df[col] == "").sum()
+                filled -= (df[col] == "-").sum()
+            non_empty_cells += filled
         completeness_score = non_empty_cells / total_cells if total_cells > 0 else 0
     else:
         completeness_score = 0
 
-    # 2. UNIQUENESS (Уникальность) - берем готовый результат от Ника
-    # dedup_result["rows_affected"] — это сколько строк оказались в коллизиях (дубли)
+    # ------------------------------------------------------------------
+    # 2. УНИКАЛЬНОСТЬ (UNIQUENESS)
+    # Основываемся на результате дедубликации: rows_affected – количество строк,
+    # попавших в коллизии. Уникальность = 1 - (доля затронутых строк).
+    # ------------------------------------------------------------------
     rows_affected = dedup_result.get("rows_affected", 0)
-    # Уникальность = 1 - (доля строк-дублей)
     uniqueness_score = 1 - (rows_affected / total_rows) if total_rows > 0 else 0
-    # Если rows_affected == 0, то скор = 1.0
 
-    
-    # TODO: ПРОВЕРИТЬ ОТЛИЧАЕТСЯ ЛИ ПРИЗНАК ОТ ПРИЗНАКА 1 
-    # 3. ACCURACY (Точность / Валидность) - проверяем, как сработали чистильщики
-    # Логика: если после очистки в колонке остались пустые значения (None или ""),
-    # значит исходные данные были невалидными (например, мусорный телефон).
-    # Считаем долю валидных (непустых) записей в ключевых колонках.
+    # ------------------------------------------------------------------
+    # 3. ТОЧНОСТЬ (ACCURACY)
+    # После работы очистителей (нормализаторов) в ключевых полях не должно
+    # оставаться пустых значений. Считаем долю непустых строк в полях
+    # inn, phone, email, address. Если поля отсутствуют – fallback 0.8.
+    # ------------------------------------------------------------------
     accuracy_checks = []
     for col in ['inn', 'phone', 'email', 'address']:
         if col in df.columns:
-            # Считаем, сколько строк в этой колонке НЕ пустые после очистки
             non_empty = df[col].notna().sum()
-            # Если в колонке строки, убираем пустые строки "" и прочерки
             if df[col].dtype == 'object':
                 non_empty -= (df[col] == "").sum()
                 non_empty -= (df[col] == "-").sum()
             ratio = non_empty / total_rows
             accuracy_checks.append(ratio)
-    # TODO: почему
-    # Если в данных вообще не было этих колонок — ставим среднюю оценку 0.8
     accuracy_score = sum(accuracy_checks) / len(accuracy_checks) if accuracy_checks else 0.8
 
-    # 4. CONSISTENCY (Согласованность) - проверяем формат ключевых полей через готовые методы
-    # Мы уже прогнали clean_inn, clean_phone и т.д. Если они вернули не None — формат ок.
-    # Проверка: если длина строки в колонке "нормальная" (не выбивается)
+    # ------------------------------------------------------------------
+    # 4. СОГЛАСОВАННОСТЬ (CONSISTENCY)
+    # Проверяем единообразие длин строк в полях inn, phone, email.
+    # Если все значения пустые (NaN) – считаем консистентность = 1.0,
+    # так как отсутствие данных не говорит о неконсистентности.
+    # ------------------------------------------------------------------
     consistency_scores = []
     for col in ['inn', 'phone', 'email']:
         if col in df.columns:
-            # Переводим в строку и считаем длину
-            lengths = df[col].astype(str).str.len()
-            # Убираем бесконечности/NaN
-            lengths = lengths[lengths > 0]
-            if len(lengths) > 1:
-                # Если стандартное отклонение маленькое (или средняя длина ~10 для ИНН/телефона)
-                mean_len = lengths.mean()
-                # TODO: пересмотреть логику проверки
-                # Если средняя длина в районе ожидаемой (ИНН ~10, телефон ~11, email ~15-20)
-                if ('inn' in col and 8 < mean_len < 14) or \
-                   ('phone' in col and 9 < mean_len < 14) or \
-                   ('email' in col and 8 < mean_len < 30):
-                    # TODO: почему
-                    col_score = 0.95  # почти идеально
-                else:
-                    # Считаем % записей, длина которых близка к средней (в пределах 3 сигм) ???????? каких сигм
-                    std = lengths.std()
-                    if std > 0:
-                        within = ((lengths - mean_len).abs() <= 3 * std).sum()
-                        col_score = within / len(lengths)
-                    else:
-                        col_score = 1.0
-                consistency_scores.append(col_score)
-            else:
-                consistency_scores.append(0.5)  # мало данных
-    
-    consistency_score = sum(consistency_scores) / len(consistency_scores) if consistency_scores else 0.8
+            # Берем только реально непустые значения: не NaN, не "", не "-"
+            valid_mask = df[col].notna() & (df[col] != "") & (df[col] != "-")
+            valid_series = df.loc[valid_mask, col]
 
-    # 5. ИТОГОВЫЙ СКОР (среднее арифметическое)
+            # Если после фильтрации ничего не осталось или всего одна запись –
+            # не на чем оценивать вариативность, считаем консистентными.
+            if len(valid_series) <= 1:
+                consistency_scores.append(1.0)
+                continue
+
+            # Вычисляем длины строк
+            lengths = valid_series.astype(str).str.len()
+            mean_len = lengths.mean()
+
+            # Если средняя длина попадает в ожидаемые диапазоны для типа поля,
+            # считаем поле идеально консистентным.
+            if ('inn' in col and 8 < mean_len < 14) or \
+               ('phone' in col and 9 < mean_len < 14) or \
+               ('email' in col and 5 < mean_len < 50):   # email может быть коротким (a@b.c) или длинным
+                col_score = 1.0
+            else:
+                # В противном случае оцениваем долю значений, длина которых
+                # лежит в пределах трёх стандартных отклонений от среднего.
+                std = lengths.std()
+                if std > 0:
+                    within = ((lengths - mean_len).abs() <= 3 * std).sum()
+                    col_score = within / len(lengths)
+                else:
+                    # Все длины одинаковы
+                    col_score = 1.0
+            consistency_scores.append(col_score)
+
+    consistency_score = sum(consistency_scores) / len(consistency_scores) if consistency_scores else 1.0
+
+    # ------------------------------------------------------------------
+    # 5. ИТОГОВАЯ ОЦЕНКА
+    # Простое среднее арифметическое четырёх метрик.
+    # ------------------------------------------------------------------
     overall = (completeness_score + uniqueness_score + accuracy_score + consistency_score) / 4
 
     return {
         "total_rows": total_rows,
         "metrics": {
-            "completeness": round(completeness_score, 2),   # Насколько заполнены поля
-            "uniqueness": round(uniqueness_score, 2),       # Насколько нет дублей
-            "accuracy": round(accuracy_score, 2),           # Насколько данные валидны
-            "consistency": round(consistency_score, 2),     # Насколько единообразны
+            "completeness": round(completeness_score, 2),
+            "uniqueness": round(uniqueness_score, 2),
+            "accuracy": round(accuracy_score, 2),
+            "consistency": round(consistency_score, 2),
         },
         "overall_quality_score": round(overall, 2),
         "details": {
