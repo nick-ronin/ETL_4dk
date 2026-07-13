@@ -27,6 +27,9 @@ from service.exporter.exporter import save_data, build_summary_text, save_report
 
 from service.logger.logger import get_log_writer
 
+from service.file_cleaner.cleaner import rotate_files
+
+
 # вывод файла
 from io import BytesIO
 from fastapi.responses import StreamingResponse
@@ -170,6 +173,8 @@ async def upload_file(file: UploadFile = File(...),
         if 'duplicate_indices' in dedup_result:
             df['duplicate_flag'] = df.index.isin(dedup_result['duplicate_indices'])
 
+        rotate_files("output/collisions", max_files=10) # удаляем лишние файлы 
+
         write(f"✓ Отчёт сохранён: {dedup_result['collisions_file']}")
         write(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
 
@@ -211,6 +216,8 @@ async def upload_file(file: UploadFile = File(...),
         if download:
             # 1. Экспорт очищенных данных
             data_export = save_data(df, output_folder="output/cleaned_data", base_name="cleaned_data")
+            rotate_files("output/cleaned_data", max_files=10) # удаляем лишние файлы 
+
             if data_export['status'] == 'ERROR':
                 raise HTTPException(status_code=500, detail=data_export.get('error'))
 
@@ -227,6 +234,8 @@ async def upload_file(file: UploadFile = File(...),
 
             # 3. Сохранение отчёта в файл
             report_export = save_report(report_text, output_folder="output/processing_report", base_name="processing_report")
+            rotate_files("output/processing_report", max_files=10) # удаляем лишние файлы 
+
             if report_export['status'] == 'ERROR':
                 raise HTTPException(status_code=500, detail=report_export.get('error'))
 
@@ -248,6 +257,9 @@ async def upload_file(file: UploadFile = File(...),
                 for file_path in archive_files:
                     zf.write(file_path, arcname=os.path.basename(file_path))
             zip_buffer.seek(0)
+
+            rotate_files("output/log", max_files=11, reserved=["app.log"]) # удаляем лишние файлы (11 для защищенного app.log)
+
 
             # Отдаём ответ
             safe_filename = quote(f"cleaned_{file.filename.rsplit('.', 1)[0]}.zip", safe='')
