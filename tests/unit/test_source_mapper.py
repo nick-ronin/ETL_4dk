@@ -1,6 +1,6 @@
 import pandas as pd
 
-from service.source_processing.source_mapper import (
+from service.source_mapper.source_mapper import (
     filter_columns,
     load_file,
     process_file

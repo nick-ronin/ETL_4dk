@@ -10,10 +10,11 @@
 """
 
 import pandas as pd
-from logger.logger import logger
+from service.logger.logger import get_log_writer
 
 
 def validate_required_columns(df: pd.DataFrame,
+                              log_file_path: str,
                               required_columns: list = None) -> dict:
     """
     Проверяет наличие обязательных колонок в DataFrame.
@@ -26,6 +27,8 @@ def validate_required_columns(df: pd.DataFrame,
     Возвращает:
         dict: результат проверки со статусом и списками колонок
     """
+
+    write = get_log_writer(log_file_path)
     
     if required_columns is None:
         required_columns = ['inn']
@@ -45,9 +48,9 @@ def validate_required_columns(df: pd.DataFrame,
     
     if missing_columns:
         result['message'] += f". Отсутствуют: {', '.join(missing_columns)}"
-        logger.warning(f"ВНИМАНИЕ! Отсутствуют колонки: {', '.join(missing_columns)}")
+        write(f"ВНИМАНИЕ! Отсутствуют колонки: {', '.join(missing_columns)}")
     else:
         result['message'] += ". Все обязательные колонки присутствуют"
-        logger.info("Все обязательные колонки присутствуют")
+        write("Все обязательные колонки присутствуют")
     
     return result

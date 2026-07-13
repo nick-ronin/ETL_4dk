@@ -15,11 +15,11 @@ import pandas as pd
 import os
 from pathlib import Path
 
-from service.logger.logger import logger
+from service.logger.logger import get_log_writer
 
 # Импортируем маппинг из source_mapper, чтобы знать,
 # какие колонки должны быть прочитаны как строки
-from service.source_processing.source_mapper import COLUMN_MAPPING, STRING_COLUMNS
+from service.source_mapper.constants import COLUMN_MAPPING, STRING_COLUMNS
 
 
 # ============================================================
@@ -49,11 +49,14 @@ STRING_VARIANTS = _build_string_variants()
 # 2. ОСНОВНАЯ ФУНКЦИЯ ЗАГРУЗКИ
 # ============================================================
 
-def load_file(file_path: str) -> pd.DataFrame:
+def load_file(file_path: str, log_file_path: str) -> pd.DataFrame:
     """
     Загружает Excel или CSV файл.
     Идентификаторы (ИНН, КПП, ОГРН и т.д.) принудительно читаются как строки.
     """
+
+    write = get_log_writer(log_file_path)
+
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл не найден: {file_path}")
 
@@ -82,33 +85,35 @@ def load_file(file_path: str) -> pd.DataFrame:
     try:
         if file_extension in ['.xlsx', '.xls']:
             df = pd.read_excel(file_path, dtype=string_dtype)
-            logger.info(f"Загружен Excel-файл: {os.path.basename(file_path)}")
+            write(f"Загружен Excel-файл: {os.path.basename(file_path)}")
         elif file_extension == '.csv':
             try:
                 df = pd.read_csv(file_path, encoding='utf-8', dtype=string_dtype)
             except UnicodeDecodeError:
                 df = pd.read_csv(file_path, encoding='windows-1251', dtype=string_dtype)
-            logger.info(f"Загружен CSV-файл: {os.path.basename(file_path)}")
+            write(f"Загружен CSV-файл: {os.path.basename(file_path)}")
 
-        logger.info(f"Строк: {len(df)}, колонок: {len(df.columns)}")
+        write(f"Строк: {len(df)}, колонок: {len(df.columns)}")
         if string_dtype:
-            logger.info(f"Колонки, прочитанные как строки: {list(string_dtype.keys())}")
+            write(f"Колонки, прочитанные как строки: {list(string_dtype.keys())}")
         return df
     except Exception as e:
         raise Exception(f"Ошибка при чтении файла: {str(e)}")
 
-# TODO: для чего нужен метод ниже?
 
+# только загружает файл и не делает с ним никаких операций
 def process_uploaded_file(file_path: str, log_file_path: str) -> dict:
     """
     Загружает файл и возвращает результат в формате, удобном для пайплайна.
     """
-    logger.info("=" * 60)
-    logger.info("ЗАПУСК ЗАГРУЗКИ ФАЙЛА (source_loader)")
-    logger.info("=" * 60)
+    write = get_log_writer(log_file_path)
+
+    write("=" * 60)
+    write("ЗАПУСК ЗАГРУЗКИ ФАЙЛА (source_loader)")
+    write("=" * 60)
 
     try:
-        df = load_file(file_path)
+        df = load_file(file_path, log_file_path)
         result = {
             'status': 'OK',
             'df': df,
@@ -118,10 +123,10 @@ def process_uploaded_file(file_path: str, log_file_path: str) -> dict:
                 'original_columns': list(df.columns)
             }
         }
-        logger.info("ЗАГРУЗКА ЗАВЕРШЕНА УСПЕШНО")
+        write("ЗАГРУЗКА ЗАВЕРШЕНА УСПЕШНО")
         return result
     except Exception as e:
-        logger.info(f"ОШИБКА: {str(e)}")
+        write(f"ОШИБКА: {str(e)}")
         return {
             'status': 'ERROR',
             'df': None,
