@@ -181,6 +181,7 @@ cython_debug/
 .cursorindexingignore
 
 output
+test_files
 
 
 # MacOS
