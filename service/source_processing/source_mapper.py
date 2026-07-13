@@ -316,8 +316,7 @@ def save_to_excel(df: pd.DataFrame,
 # ============================================================
 
 def process_file(df: pd.DataFrame,
-                 required_columns: list = None,
-                 output_folder: str = None) -> dict:
+                 required_columns: list = None) -> dict:
     """
     Принимает DataFrame (сырой, после source_loader),
     переименовывает колонки, фильтрует под ERD/MVP.
@@ -349,18 +348,11 @@ def process_file(df: pd.DataFrame,
         filter_result = filter_columns(df, required_columns)
         df_filtered = filter_result['df']
 
-        # Шаг 4: сохранение (опционально)
-        saved_file_path = None
-        if output_folder:
-            saved_file_path = save_to_excel(df_filtered, output_folder,
-                                            "mapped_data")
-
         result = {
             'status': 'OK' if validation_result['status'] == 'OK' else 'WARNING',
             'df': df_filtered,
             'validation_result': validation_result,
             'stats': filter_result['stats'],
-            'output_file': saved_file_path
         }
 
         logger.info("=" * 60)

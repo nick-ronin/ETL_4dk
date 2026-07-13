@@ -127,7 +127,6 @@ def load_file(file_path: str) -> pd.DataFrame:
 def process_uploaded_file(file_path: str) -> dict:
     """
     Загружает файл и возвращает результат в формате, удобном для пайплайна.
-    Больше не делает нормализацию и не сохраняет промежуточный Excel.
     """
     logger.info("=" * 60)
     logger.info("ЗАПУСК ЗАГРУЗКИ ФАЙЛА (source_loader)")

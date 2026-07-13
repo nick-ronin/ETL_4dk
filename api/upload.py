@@ -195,11 +195,6 @@ async def upload_file(file: UploadFile = File(...),
 
         clean_data = df.to_dict(orient='records')
 
-        mapper_output_file = mapper_result.get("output_file")
-        if mapper_output_file and os.path.exists(mapper_output_file):
-            os.remove(mapper_output_file)
-            logger.info(f"Удалён промежуточный файл маппера: {mapper_output_file}")
-
         # ================================================
         # ШАГ 7: Формирование архива на выдачу
         # ================================================
