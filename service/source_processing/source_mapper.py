@@ -19,6 +19,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from logger.logger import logger
+
 
 # ============================================================
 # 1. СПИСОК КОЛОНОК ИЗ ERD
@@ -143,7 +145,7 @@ def find_input_files(folder_path: str = "output", prefix: str = "standard_") -> 
     """
     
     if not os.path.exists(folder_path):
-        print(f"Папка не найдена: {folder_path}")
+        logger.info(f"Папка не найдена: {folder_path}")
         return []
     
     found_files = []
@@ -151,7 +153,7 @@ def find_input_files(folder_path: str = "output", prefix: str = "standard_") -> 
         if file.startswith(prefix) and file.endswith('.xlsx'):
             file_path = os.path.join(folder_path, file)
             found_files.append(file_path)
-            print(f"Найден файл: {file}")
+            logger.info(f"Найден файл: {file}")
     
     return found_files
 
@@ -167,8 +169,8 @@ def load_file(file_path: str) -> pd.DataFrame:
         raise FileNotFoundError(f"Файл не найден: {file_path}")
     
     df = pd.read_excel(file_path)
-    print(f"Загружен файл: {os.path.basename(file_path)}")
-    print(f"  Строк: {len(df)}, колонок: {len(df.columns)}")
+    logger.info(f"Загружен файл: {os.path.basename(file_path)}")
+    logger.info(f"  Строк: {len(df)}, колонок: {len(df.columns)}")
     return df
 
 
@@ -199,10 +201,10 @@ def filter_columns(df: pd.DataFrame,
         else:
             missing_columns.append(col)
     
-    print(f"\n--- СОПОСТАВЛЕНИЕ КОЛОНОК ---")
-    print(f"Всего в ERD: {len(required_columns)} колонок")
-    print(f"Найдено в файле: {len(existing_columns)}")
-    print(f"Будет добавлено пустых: {len(missing_columns)}")
+    logger.info(f"--- СОПОСТАВЛЕНИЕ КОЛОНОК ---")
+    logger.info(f"Всего в ERD: {len(required_columns)} колонок")
+    logger.info(f"Найдено в файле: {len(existing_columns)}")
+    logger.info(f"Будет добавлено пустых: {len(missing_columns)}")
     
     # Оставляем только нужные колонки (те, что есть в файле)
     df_filtered = df[existing_columns].copy() if existing_columns else pd.DataFrame()
@@ -212,14 +214,14 @@ def filter_columns(df: pd.DataFrame,
         df_filtered[col] = None
     
     # Выводим информацию о сопоставлении по таблицам ERD
-    print(f"\n--- СОПОСТАВЛЕНИЕ ПО ТАБЛИЦАМ ERD ---")
+    logger.info(f"--- СОПОСТАВЛЕНИЕ ПО ТАБЛИЦАМ ERD ---")
     for table, columns in ERD_COLUMNS.items():
         found = [col for col in columns if col in existing_columns]
         missing = [col for col in columns if col not in df.columns]
         if found or missing:
-            print(f"  {table}: найдено {len(found)}/{len(columns)}")
+            logger.info(f"  {table}: найдено {len(found)}/{len(columns)}")
             if missing:
-                print(f"    отсутствуют: {', '.join(missing)}")
+                logger.info(f"    отсутствуют: {', '.join(missing)}")
     
     return {
         'df': df_filtered,
@@ -246,8 +248,8 @@ def save_to_excel(df: pd.DataFrame,
     file_path = os.path.join(output_folder, filename)
     
     df.to_excel(file_path, index=False, engine='openpyxl')
-    print(f"\nФайл сохранён: {file_path}")
-    print(f"  Строк: {len(df)}, колонок: {len(df.columns)}")
+    logger.info(f"Файл сохранён: {file_path}")
+    logger.info(f"Строк: {len(df)}, колонок: {len(df.columns)}")
     
     return file_path
 
@@ -267,9 +269,9 @@ def process_file(input_file_path: str,
         dict: результат обработки
     """
     
-    print("\n" + "=" * 60)
-    print("ЗАПУСК source_mapper")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("ЗАПУСК source_mapper")
+    logger.info("=" * 60)
     
     if required_columns is None:
         required_columns = ALL_ERD_COLUMNS
@@ -296,20 +298,20 @@ def process_file(input_file_path: str,
             'stats': filter_result['stats']
         }
         
-        print("\n" + "=" * 60)
-        print(f"ОБРАБОТКА ЗАВЕРШЕНА. СТАТУС: OK")
-        print(f"  Входной файл: {os.path.basename(input_file_path)}")
-        print(f"  Выходной файл: {os.path.basename(saved_file_path)}")
-        print(f"  Было колонок: {len(df.columns)}")
-        print(f"  Стало колонок: {len(df_filtered.columns)}")
-        print("=" * 60 + "\n")
+        logger.info("=" * 60)
+        logger.info(f"ОБРАБОТКА ЗАВЕРШЕНА. СТАТУС: OK")
+        logger.info(f"  Входной файл: {os.path.basename(input_file_path)}")
+        logger.info(f"  Выходной файл: {os.path.basename(saved_file_path)}")
+        logger.info(f"  Было колонок: {len(df.columns)}")
+        logger.info(f"  Стало колонок: {len(df_filtered.columns)}")
+        logger.info("=" * 60)
         
         return result
     
     except Exception as e:
-        print("\n" + "=" * 60)
-        print(f"ОШИБКА: {str(e)}")
-        print("=" * 60 + "\n")
+        logger.info("=" * 60)
+        logger.info(f"ОШИБКА: {str(e)}")
+        logger.info("=" * 60)
         
         return {
             'status': 'ERROR',
@@ -340,32 +342,32 @@ def process_all_files(input_folder: str = "output",
         list: результаты обработки каждого файла
     """
     
-    print("\n" + "=" * 60)
-    print("ПАРТИЙНАЯ ОБРАБОТКА ФАЙЛОВ")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("ПАРТИЙНАЯ ОБРАБОТКА ФАЙЛОВ")
+    logger.info("=" * 60)
     
     # Находим все файлы
     files = find_input_files(input_folder)
     
     if not files:
-        print("\nВ папке output не найдено файлов с префиксом 'standard_'")
-        print("Запустите source_loader сначала, чтобы создать файлы для обработки")
-        print("\n" + "=" * 60)
+        logger.info("В папке output не найдено файлов с префиксом 'standard_'")
+        logger.info("Запустите source_loader сначала, чтобы создать файлы для обработки")
+        logger.info("=" * 60)
         return []
     
-    print(f"\nНайдено файлов для обработки: {len(files)}")
-    print("-" * 40)
+    logger.info(f"Найдено файлов для обработки: {len(files)}")
+    logger.info("-" * 40)
     
     results = []
     for i, file_path in enumerate(files, 1):
-        print(f"\n--- Обработка файла {i}: {os.path.basename(file_path)} ---")
+        logger.info(f"--- Обработка файла {i}: {os.path.basename(file_path)} ---")
         result = process_file(file_path, required_columns, output_folder)
         results.append(result)
     
-    print("\n" + "=" * 60)
-    print(f"ОБРАБОТКА ВСЕХ ФАЙЛОВ ЗАВЕРШЕНА")
-    print(f"  Обработано: {len(results)} файлов")
-    print(f"  Успешно: {len([r for r in results if r['status'] == 'OK'])}")
-    print("=" * 60 + "\n")
+    logger.info("=" * 60)
+    logger.info(f"ОБРАБОТКА ВСЕХ ФАЙЛОВ ЗАВЕРШЕНА")
+    logger.info(f"  Обработано: {len(results)} файлов")
+    logger.info(f"  Успешно: {len([r for r in results if r['status'] == 'OK'])}")
+    logger.info("=" * 60)
     
     return results

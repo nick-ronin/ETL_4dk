@@ -8,6 +8,8 @@ import os
 import tempfile
 import zipfile
 from datetime import datetime
+from urllib.parse import quote
+import uuid
 
 from fastapi import APIRouter
 from fastapi import File
@@ -28,7 +30,9 @@ from service.deduplicator.get_duplicates import get_duplicates
 # data quality score
 from service.quality.quality import calculate_data_quality_score
 
-from service.exporter.exporter import export_from_mapper, export_to_excel
+from service.exporter.exporter import export_with_report
+
+from logger.logger import logger
 
 # вывод файла
 from io import BytesIO
@@ -40,7 +44,6 @@ router = APIRouter(
     prefix="/upload",
     tags=["Upload"]
 )
-
 
 def clean_json_value(obj):
     """
@@ -69,7 +72,7 @@ async def upload_file(file: UploadFile = File(...),
     4. Нормализация данных (очистка ИНН, телефонов, названий)
     5. Поиск коллизий/дубликатов
     6. Оценка качества результата
-    7. Возврат результата в Excel-файлах
+    7. Возврат архива файлов в качестве результата
     """
     extension = os.path.splitext(file.filename)[1]
     temp_path = None  # инициализируем заранее, чтобы избежать NameError
@@ -92,9 +95,9 @@ async def upload_file(file: UploadFile = File(...),
         # ШАГ 1: SourceLoader — загрузка и маппинг колонок
         # ================================================
         
-        print("\n" + "="*60)
-        print("ШАГ 1/4: SourceLoader — загрузка и маппинг колонок")
-        print("="*60)
+        logger.info("="*60)
+        logger.info("ШАГ 1/4: SourceLoader — загрузка и маппинг колонок")
+        logger.info("="*60)
 
         upload_result = process_uploaded_file(
             file_path=temp_path,
@@ -120,9 +123,9 @@ async def upload_file(file: UploadFile = File(...),
         # ШАГ 3: SourceMapper — фильтрация под ERD
         # ================================================
 
-        print("\n" + "="*60)
-        print("ШАГ 2/4: SourceMapper — фильтрация колонок под ERD")
-        print("="*60)
+        logger.info("="*60)
+        logger.info("ШАГ 2/4: SourceMapper — фильтрация колонок под ERD")
+        logger.info("="*60)
 
         mapper_result = process_file(
             input_file_path=normalised_file_path,
@@ -139,32 +142,35 @@ async def upload_file(file: UploadFile = File(...),
         # ШАГ 4: Нормализация данных
         # ================================================
 
-        print("\n" + "="*60)
-        print("ШАГ 3/4: Нормализатор — очистка данных")
-        print("="*60)
+        logger.info("="*60)
+        logger.info("ШАГ 3/4: Нормализатор — очистка данных")
+        logger.info("="*60)
         
         df = normalize_company_names(df)
-        print("✓ Названия компаний нормализованы")
+        logger.info("✓ Названия компаний нормализованы")
 
         # точно посмотреть че делает apply
         df['inn'] = df['inn'].apply(clean_inn)
-        print("✓ ИНН очищены")
+        logger.info("✓ ИНН очищены")
         
         df['phone'] = df['phone'].apply(clean_phone)
-        print("✓ Телефоны очищены")
+        logger.info("✓ Телефоны очищены")
         
         df['email'] = df['email'].apply(clean_email)
-        print("✓ Email очищены")
+        logger.info("✓ Email очищены")
 
         df['address'] = df['address'].apply(clean_address)
-        print("✓ Адреса очищены")
+        logger.info("✓ Адреса очищены")
+
+        df['has_email'] = df['email'].notna() & (df['email'] != '') & (df['email'] != '-')
+        df['has_phone'] = df['phone'].notna() & (df['phone'] != '') & (df['phone'] != '-')
 
         # ================================================
         # ШАГ 5: Дедупликация
         # ================================================
-        print("\n" + "="*60)
-        print("ШАГ 4/4: Дедупликатор — поиск коллизий")
-        print("="*60)
+        logger.info("="*60)
+        logger.info("ШАГ 4/4: Дедупликатор — поиск коллизий")
+        logger.info("="*60)
 
         dup_columns = ['inn', 'email', 'phone', 'short_name']
         
@@ -178,76 +184,67 @@ async def upload_file(file: UploadFile = File(...),
             output_dir="output"
         )
 
-        print(f"✓ Отчёт сохранён: {dedup_result['collisions_file']}")
-        print(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
+        if 'duplicate_indices' in dedup_result:
+            df['duplicate_flag'] = df.index.isin(dedup_result['duplicate_indices'])
+
+        logger.info(f"✓ Отчёт сохранён: {dedup_result['collisions_file']}")
+        logger.info(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
 
         # ================================================
         # ШАГ 6: Расчёт качества данных
         # ================================================
-        print("\n" + "="*60)
-        print("Расчёт качества данных")
-        print("="*60)
+        logger.info("="*60)
+        logger.info("Расчёт качества данных")
+        logger.info("="*60)
          
         quality_report = calculate_data_quality_score(df, dedup_result)
-        print(f'''✓ Quality Score рассчитан: {quality_report['overall_quality_score']}
-        Детально:
-        COMPLETENESS (Полнота) = {quality_report['metrics'].get("completeness")}
-        UNIQUENESS (Уникальность) = {quality_report['metrics'].get("uniqueness")}
-        ACCURACY (Точность / Валидность) = {quality_report['metrics'].get("accuracy")}
-        CONSISTENCY (Согласованность) = {quality_report['metrics'].get("consistency")}''')
+        logger.info(f'''✓ Quality Score рассчитан: {quality_report['overall_quality_score']}
+                            Детально:
+                            COMPLETENESS (Полнота) = {quality_report['metrics'].get("completeness")}
+                            UNIQUENESS (Уникальность) = {quality_report['metrics'].get("uniqueness")}
+                            ACCURACY (Точность / Валидность) = {quality_report['metrics'].get("accuracy")}
+                            CONSISTENCY (Согласованность) = {quality_report['metrics'].get("consistency")}''')
         
-        raw_data = df.to_dict(orient="records")
+        df['source_type'] = source_type
+        df['source_name'] = source_name
+        df['source_date'] = source_date
 
-        for item in raw_data:
-            item["source_type"] = source_type
-            item["source_name"] = source_name
-            item["source_date"] = source_date
+        safe_name = "".join(c for c in source_name if c.isalnum())[:10]  # обрезаем до 10 символов
+        df['id'] = [f"{safe_name}-{source_date}-{i+1:05d}" for i in range(len(df))]
 
-        # TODO: формировать id по сегодняшней дате и порядковому номеру
-
-        # clean_data = clean_json_value(raw_data)
-
-        mapper_export_result = export_from_mapper(
-            mapper_result,
-            output_folder="output"
-        )
-
-        if mapper_export_result["status"] == "ERROR":
-            raise HTTPException(status_code=500, detail=mapper_export_result.get("error", "Ошибка экспорта mapper"))
-
-        clean_data = mapper_export_result
+        clean_data = df.to_dict(orient='records')
 
         if normalised_file_path and os.path.exists(normalised_file_path):
             os.remove(normalised_file_path)
-            print(f"Удалён промежуточный файл: {normalised_file_path}")
+            logger.info(f"Удалён промежуточный файл: {normalised_file_path}")
 
         mapper_output_file = mapper_result.get("output_file")
         if mapper_output_file and os.path.exists(mapper_output_file):
             os.remove(mapper_output_file)
-            print(f"Удалён промежуточный файл маппера: {mapper_output_file}")
+            logger.info(f"Удалён промежуточный файл маппера: {mapper_output_file}")
 
         # ================================================
-        # ШАГ 7: Формирование файла Excel
+        # ШАГ 7: Формирование архива на выдачу
         # ================================================
-        print("\n" + "="*60)
-        print("Формирование файла Excel")
-        print("="*60)
+        logger.info("="*60)
+        logger.info("Формирование архива для выдачи файлов")
+        logger.info("="*60)
 
         if download:
-            excel_export_result = export_to_excel(
+            export_result = export_with_report(
                 df,
                 output_folder="output",
-                filename="cleaned_data"
+                filename_main="cleaned_data",
+                filename_report="processing_report"
             )
 
-            if excel_export_result["status"] == "ERROR":
-                raise HTTPException(status_code=500, detail=excel_export_result.get("error", "Ошибка экспорта Excel"))
+            if export_result["status"] == "ERROR":
+                raise HTTPException(status_code=500, detail=export_result.get("error", "Ошибка экспорта Excel"))
 
             archive_files = [
-                mapper_export_result.get("main_file"),
-                mapper_export_result.get("report_file"),
+                export_result.get("main_file"),
+                export_result.get("report_file"),
                 dedup_result.get("collisions_file"),
-                excel_export_result.get("file_path"),
             ]
 
             missing_files = [path for path in archive_files if not path or not os.path.exists(path)]
@@ -260,8 +257,12 @@ async def upload_file(file: UploadFile = File(...),
                     archive.write(file_path, arcname=os.path.basename(file_path))
             output.seek(0)
 
+            base_name = file.filename.rsplit('.', 1)[0]   # без расширения
+            safe_filename = f"cleaned_{base_name}.zip"
+            encoded_filename = quote(safe_filename, safe='')
+
             headers = {
-                "Content-Disposition": f"attachment; filename=cleaned_{file.filename.rsplit('.', 1)[0]}.zip"
+                "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
             }
             return StreamingResponse(
                 output,
@@ -277,7 +278,6 @@ async def upload_file(file: UploadFile = File(...),
             "quality": quality_report,
             "data": clean_data
         }
-        
 
     finally:
         if temp_path and os.path.exists(temp_path):

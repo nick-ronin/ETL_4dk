@@ -17,6 +17,8 @@ import os
 from pathlib import Path
 from datetime import datetime
 
+from logger.logger import logger
+
 
 # ============================================================
 # 1. СЛОВАРЬ СООТВЕТСТВИЙ КОЛОНОК (МАППИНГ)
@@ -148,8 +150,8 @@ def find_test_files(folder_path: str = "test_files") -> list:
     """
     
     if not os.path.exists(folder_path):
-        print(f"Папка не найдена: {folder_path}")
-        print("Создайте папку 'test_files' и положите в неё Excel или CSV файлы")
+        logger.info(f"Папка не найдена: {folder_path}")
+        logger.info("Создайте папку 'test_files' и положите в неё Excel или CSV файлы")
         return []
     
     supported_extensions = ['.xlsx', '.xls', '.csv']
@@ -161,7 +163,7 @@ def find_test_files(folder_path: str = "test_files") -> list:
             extension = Path(file_path).suffix.lower()
             if extension in supported_extensions:
                 found_files.append(file_path)
-                print(f"Найден файл: {file}")
+                logger.info(f"Найден файл: {file}")
     
     return found_files
 
@@ -231,8 +233,8 @@ def save_to_excel(df: pd.DataFrame,
     # Сохраняем DataFrame в Excel
     df.to_excel(file_path, index=False, engine='openpyxl')
     
-    print(f"Файл сохранён: {file_path}")
-    print(f"  Строк: {len(df)}, колонок: {len(df.columns)}")
+    logger.info(f"Файл сохранён: {file_path}")
+    logger.info(f"  Строк: {len(df)}, колонок: {len(df.columns)}")
     
     return file_path
 
@@ -252,17 +254,17 @@ def load_file(file_path: str) -> pd.DataFrame:
     try:
         if file_extension in ['.xlsx', '.xls']:
             df = pd.read_excel(file_path)
-            print(f"Загружен Excel-файл: {os.path.basename(file_path)}")
+            logger.info(f"Загружен Excel-файл: {os.path.basename(file_path)}")
         elif file_extension == '.csv':
             try:
                 df = pd.read_csv(file_path, encoding='utf-8')
             except UnicodeDecodeError:
                 df = pd.read_csv(file_path, encoding='windows-1251')
-            print(f"Загружен CSV-файл: {os.path.basename(file_path)}")
+            logger.info(f"Загружен CSV-файл: {os.path.basename(file_path)}")
         else:
             raise ValueError(f"Неподдерживаемый формат: {file_extension}. Используйте .xlsx, .xls или .csv")
         
-        print(f"Строк: {len(df)}, колонок: {len(df.columns)}")
+        logger.info(f"Строк: {len(df)}, колонок: {len(df.columns)}")
         return df
     except Exception as e:
         raise Exception(f"Ошибка при чтении файла: {str(e)}")
@@ -274,16 +276,16 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     mapping = map_columns(df.columns.tolist())
     df_renamed = df.rename(columns=mapping)
     
-    print(f"Сопоставлено колонок: {len(mapping)} из {len(df.columns)}")
+    logger.info(f"Сопоставлено колонок: {len(mapping)} из {len(df.columns)}")
     
     renamed_count = 0
     for original, standard in mapping.items():
         if original != standard:
-            print(f"  {original} -> {standard}")
+            logger.info(f"  {original} -> {standard}")
             renamed_count += 1
     
     if renamed_count == 0:
-        print("  Все колонки уже в стандартном формате")
+        logger.info("  Все колонки уже в стандартном формате")
     
     return df_renamed
 
@@ -316,10 +318,10 @@ def validate_required_columns(df: pd.DataFrame, required_columns: list = None) -
     
     if missing_columns:
         result['message'] += f". Отсутствуют: {', '.join(missing_columns)}"
-        print(f"ВНИМАНИЕ! Отсутствуют колонки: {', '.join(missing_columns)}")
+        logger.info(f"ВНИМАНИЕ! Отсутствуют колонки: {', '.join(missing_columns)}")
     else:
         result['message'] += ". Все обязательные колонки присутствуют"
-        print("Все обязательные колонки присутствуют")
+        logger.info("Все обязательные колонки присутствуют")
     
     return result
 
@@ -341,9 +343,9 @@ def process_uploaded_file(file_path: str,
         dict: результат обработки со статусом, данными и отчётом
     """
     
-    print("\n" + "=" * 60)
-    print("ЗАПУСК ОБРАБОТКИ ФАЙЛА")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("ЗАПУСК ОБРАБОТКИ ФАЙЛА")
+    logger.info("=" * 60)
     
     if required_columns is None:
         required_columns = ['inn']
@@ -378,18 +380,18 @@ def process_uploaded_file(file_path: str,
             }
         }
         
-        print("\n" + "=" * 60)
-        print(f"ОБРАБОТКА ЗАВЕРШЕНА. СТАТУС: {result['status']}")
+        logger.info("=" * 60)
+        logger.info(f"ОБРАБОТКА ЗАВЕРШЕНА. СТАТУС: {result['status']}")
         if saved_file_path:
-            print(f"РЕЗУЛЬТАТ СОХРАНЁН: {saved_file_path}")
-        print("=" * 60 + "\n")
+            logger.info(f"РЕЗУЛЬТАТ СОХРАНЁН: {saved_file_path}")
+        logger.info("=" * 60)
         
         return result
     
     except Exception as e:
-        print("\n" + "=" * 60)
-        print(f"ОШИБКА: {str(e)}")
-        print("=" * 60 + "\n")
+        logger.info("=" * 60)
+        logger.info(f"ОШИБКА: {str(e)}")
+        logger.info("=" * 60)
         
         return {
             'status': 'ERROR',

@@ -56,8 +56,8 @@ result = export_from_mapper(
 )
 
 if result['status'] == 'OK':
-    print(f"Файл сохранён: {result['main_file']}")
-    print(f"Отчёт сохранён: {result['report_file']}")
+    logger.info(f"Файл сохранён: {result['main_file']}")
+    logger.info(f"Отчёт сохранён: {result['report_file']}")
 ```
 
 ### Способ 2: Экспорт любого DataFrame
@@ -71,7 +71,7 @@ result = export_to_excel(
     filename="my_data"
 )
 
-print(f"Сохранён: {result['file_path']}")
+logger.info(f"Сохранён: {result['file_path']}")
 ```
 
 ### Способ 3: Экспорт с отчётом
@@ -86,8 +86,8 @@ result = export_with_report(
     filename_report="processing_report"
 )
 
-print(f"Основной файл: {result['main_file']}")
-print(f"Файл отчёта: {result['report_file']}")
+logger.info(f"Основной файл: {result['main_file']}")
+logger.info(f"Файл отчёта: {result['report_file']}")
 ```
 
 ### Способ 4: Простой экспорт одного файла
@@ -101,7 +101,7 @@ file_path = export_simple(
     filename="data_export"
 )
 
-print(f"Сохранён: {file_path}")
+logger.info(f"Сохранён: {file_path}")
 ```
 
 ---
@@ -267,7 +267,7 @@ export_result = export_from_mapper(
     output_folder="Exporter/output"
 )
 
-print(f"Готово! Файлы в Exporter/output/")
+logger.info(f"Готово! Файлы в Exporter/output/")
 ```
 
 ---
