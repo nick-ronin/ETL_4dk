@@ -164,7 +164,7 @@ async def upload_file(file: UploadFile = File(...),
             df,
             columns=dup_columns,
             source_name=file.filename,           # имя исходного файла
-            output_dir="output"
+            output_dir="output/collisions"
         )
 
         if 'duplicate_indices' in dedup_result:
@@ -210,7 +210,7 @@ async def upload_file(file: UploadFile = File(...),
 
         if download:
             # 1. Экспорт очищенных данных
-            data_export = save_data(df, output_folder="output", base_name="cleaned_data")
+            data_export = save_data(df, output_folder="output/cleaned_data", base_name="cleaned_data")
             if data_export['status'] == 'ERROR':
                 raise HTTPException(status_code=500, detail=data_export.get('error'))
 
@@ -226,7 +226,7 @@ async def upload_file(file: UploadFile = File(...),
             )
 
             # 3. Сохранение отчёта в файл
-            report_export = save_report(report_text, output_folder="output", base_name="processing_report")
+            report_export = save_report(report_text, output_folder="output/processing_report", base_name="processing_report")
             if report_export['status'] == 'ERROR':
                 raise HTTPException(status_code=500, detail=report_export.get('error'))
 
