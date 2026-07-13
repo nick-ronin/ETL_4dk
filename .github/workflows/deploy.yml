@@ -22,4 +22,5 @@ jobs:
             cd /var/lib/uvicorn/ETL_4dk
             git pull origin dev
             /var/lib/uvicorn/ETL_4dk/venv/bin/pip install -r requirements.txt
+            chown -R uvicorn:uvicorn /var/lib/uvicorn/ETL_4dk
             systemctl restart uvicorn
