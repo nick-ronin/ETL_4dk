@@ -62,7 +62,7 @@ def clean_inn(inn_raw):
     # Удаляем все нецифровые символы
     inn_result = re.sub(r'\D', '', inn_str)
     
-    if len(inn_result) != 10 and len(inn_result) != 12:
+    if len(inn_result) != 10 or len(inn_result) != 12:
         return "Неверный формат ИНН"
     
     if inn_result[:2] == "00":
@@ -95,9 +95,8 @@ def clean_email(email_str):
         исходное значение - если оно не является строкой или равно NaN.
     """
 
-    # Если в ячейке пусто (NaN) или там не текст (например, число)
-    # то ничего не делаем и возвращаем как есть, чтобы не было ошибки
-    if pd.isna(email_str) or not isinstance(email_str, str):
+    # Если в ячейке пусто (NaN), то ничего не делаем и возвращаем как есть, чтобы не было ошибки
+    if pd.isna(email_str):
         return email_str
 
     # Шаблон, который описывает, как должен выглядеть правильный email

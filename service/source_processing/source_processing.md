@@ -70,7 +70,7 @@ from src.source_mapper import process_file, ALL_ERD_COLUMNS
 
 input_file = "test_files/ваш_файл.xlsx"
 
-print("Запуск source_loader...")
+logger.info("Запуск source_loader...")
 result_loader = process_uploaded_file(
     file_path=input_file,
     required_columns=['inn'],
@@ -79,14 +79,14 @@ result_loader = process_uploaded_file(
 )
 
 if result_loader['status'] != 'ERROR':
-    print("Запуск source_mapper...")
+    logger.info("Запуск source_mapper...")
     result_mapper = process_file(
         input_file_path=result_loader['saved_file'],
         required_columns=ALL_ERD_COLUMNS,
         output_folder="output"
     )
     
-    print(f"Готово! Файл сохранён: {result_mapper['output_file']}")
+    logger.info(f"Готово! Файл сохранён: {result_mapper['output_file']}")
 ```
 
 Запуск:
