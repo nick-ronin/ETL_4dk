@@ -18,6 +18,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
+            git config --global --add safe.directory /var/lib/uvicorn/ETL_4dk
             cd /var/lib/uvicorn/ETL_4dk
             git pull origin dev
             /var/lib/uvicorn/ETL_4dk/venv/bin/pip install -r requirements.txt
