@@ -9,7 +9,7 @@ def clean_phone(phone_raw):
     Если номер уже содержит +, он сохраняется.
     Несколько номеров в одной ячейке объединяются через ', '.
     """
-    if pd.isna(phone_raw):
+    if pd.isna(phone_raw) or not isinstance(phone_raw, str):
         return phone_raw
 
     # Разбиваем по основным разделителям (точка с запятой, запятая, слэш, вертикальная черта)
@@ -50,25 +50,22 @@ def clean_phone(phone_raw):
     return ', '.join(cleaned_parts) if cleaned_parts else None
 
 
-def clean_inn(inn_raw):
-    if pd.isna(inn_raw):
+def clean_inn(inn):
+    if pd.isna(inn) or not isinstance(inn, str):
         return None
     
-    # что будет возвращать
-    inn_result = ""
-    
-    inn_str = str(inn_raw).strip()
+    inn = inn.strip()
     
     # Удаляем все нецифровые символы
-    inn_result = re.sub(r'\D', '', inn_str)
+    inn = re.sub(r'\D', '', inn)
     
-    if len(inn_result) != 10 or len(inn_result) != 12:
+    if len(inn) != 10 and len(inn) != 12:
         return "Неверный формат ИНН"
     
-    if inn_result[:2] == "00":
+    if inn[:2] == "00":
         return "Неверный формат ИНН"
-    
-    return inn_result
+
+    return inn
 
 
 
@@ -96,7 +93,7 @@ def clean_email(email_str):
     """
 
     # Если в ячейке пусто (NaN), то ничего не делаем и возвращаем как есть, чтобы не было ошибки
-    if pd.isna(email_str):
+    if pd.isna(email_str) or not isinstance(email_str, str):
         return email_str
 
     # Шаблон, который описывает, как должен выглядеть правильный email
@@ -150,7 +147,7 @@ def clean_short_name(name):
         'Picaso 3d'                 → 'PICASO 3D'
         'А-сбыт, торговая компания' → 'А-СБЫТ'
     """
-    if pd.isna(name):
+    if pd.isna(name) or not isinstance(name, str):
         return ''
     
     name = name.strip()
@@ -227,7 +224,7 @@ def clean_full_name(name):
         'ООО ПО СМЗ'
             → 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ ПРОИЗВОДСТВЕННОЕ ОБЪЕДИНЕНИЕ СМЗ'
     """
-    if pd.isna(name):
+    if pd.isna(name) or not isinstance(name, str):
         return ''
     
     name = name.strip()
@@ -300,7 +297,7 @@ def clean_address(address):
         "название улицы, номер дома стрномер корпномер"
     """
 
-    if pd.isna(address):
+    if pd.isna(address) or not isinstance(address, str):
         return address
 
     # убираем переносы и лишние пробелы

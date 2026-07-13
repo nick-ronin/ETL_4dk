@@ -99,25 +99,12 @@ async def upload_file(file: UploadFile = File(...),
         logger.info("ШАГ 1/4: SourceLoader — загрузка и маппинг колонок")
         logger.info("="*60)
 
-        upload_result = process_uploaded_file(
-            file_path=temp_path,
-            required_columns=MVP_COLUMNS, #TODO: протестить с erd_columns
-            save_output=True, 
-            output_folder="output"
-        )
-
-        # ================================================
-        # ШАГ 2: Валидация (уже внутри process_uploaded_file)
-        # ================================================
+        upload_result = process_uploaded_file(file_path=temp_path)
 
         if upload_result["status"] == "ERROR":
-            raise HTTPException(status_code=400, detail=upload_result["error"])
-        validation_info = upload_result.get("validation_result", "Нет данных")
-
-        # Получаем путь к нормализованному файлу
-        normalised_file_path = upload_result.get("saved_file")
-        if not normalised_file_path or not os.path.exists(normalised_file_path):
-            raise HTTPException(status_code=500, detail="Не удалось получить выходной файл после нормализации")
+            raise HTTPException(status_code=400, detail=upload_result.get('error', "Ошибка загрузчика"))
+        
+        df_raw = upload_result['df']
 
         # ================================================
         # ШАГ 3: SourceMapper — фильтрация под ERD
@@ -127,11 +114,7 @@ async def upload_file(file: UploadFile = File(...),
         logger.info("ШАГ 2/4: SourceMapper — фильтрация колонок под ERD")
         logger.info("="*60)
 
-        mapper_result = process_file(
-            input_file_path=normalised_file_path,
-            required_columns=MVP_COLUMNS, #TODO: протестить с erd_columns
-            output_folder="output"
-        )
+        mapper_result = process_file(df=df_raw, required_columns=MVP_COLUMNS)
 
         if mapper_result["status"] == "ERROR":
             raise HTTPException(status_code=400, detail=mapper_result.get("error", "Ошибка маппера"))
@@ -149,7 +132,6 @@ async def upload_file(file: UploadFile = File(...),
         df = normalize_company_names(df)
         logger.info("✓ Названия компаний нормализованы")
 
-        # точно посмотреть че делает apply
         df['inn'] = df['inn'].apply(clean_inn)
         logger.info("✓ ИНН очищены")
         
@@ -174,7 +156,6 @@ async def upload_file(file: UploadFile = File(...),
 
         dup_columns = ['inn', 'email', 'phone', 'short_name']
         
-        # ХЗ ЧЕ ЗА КОД
         dup_columns = [c for c in dup_columns if c in df.columns]
 
         dedup_result = get_duplicates(
@@ -213,10 +194,6 @@ async def upload_file(file: UploadFile = File(...),
         df['id'] = [f"{safe_name}-{source_date}-{i+1:05d}" for i in range(len(df))]
 
         clean_data = df.to_dict(orient='records')
-
-        if normalised_file_path and os.path.exists(normalised_file_path):
-            os.remove(normalised_file_path)
-            logger.info(f"Удалён промежуточный файл: {normalised_file_path}")
 
         mapper_output_file = mapper_result.get("output_file")
         if mapper_output_file and os.path.exists(mapper_output_file):
@@ -272,7 +249,7 @@ async def upload_file(file: UploadFile = File(...),
 
         return {
             "status": mapper_result["status"],
-            "validation": str(validation_info),
+            "validation": str(upload_result.validation_info),
             "rows": len(df),
             "columns": list(df.columns),
             "quality": quality_report,
