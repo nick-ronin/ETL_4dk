@@ -1,241 +1,96 @@
-(4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % pytest tests/unit -v
-======================================== test session starts =========================================
-platform darwin -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0 -- /Users/nana_vitol/miniforge3/envs/4dk/bin/python3.13
-cachedir: .pytest_cache
-rootdir: /Users/nana_vitol/4dk/ETL_4dk
-plugins: cov-7.1.0, anyio-4.14.1
-collected 65 items                                                                                   
-
-tests/unit/test_deduplicator.py::test_duplicates_none PASSED                                   [  1%]
-tests/unit/test_deduplicator.py::test_duplicates_partial PASSED                                [  3%]
-tests/unit/test_deduplicator.py::test_duplicates_full PASSED                                   [  4%]
-tests/unit/test_deduplicator.py::test_duplicates_with_nan PASSED                               [  6%]
-tests/unit/test_deduplicator.py::test_duplicates_empty_df PASSED                               [  7%]
-tests/unit/test_exporter.py::test_export_to_excel PASSED                                       [  9%]
-tests/unit/test_exporter_extra.py::test_export_simple PASSED                                   [ 10%]
-tests/unit/test_exporter_extra.py::test_export_mapper_error PASSED                             [ 12%]
-tests/unit/test_exporter_extra.py::test_export_mapper_empty PASSED                             [ 13%]
-tests/unit/test_exporter_extra.py::test_export_mapper_ok PASSED                                [ 15%]
-tests/unit/test_normalizer.py::test_clean_phone_replace_8 PASSED                               [ 16%]
-tests/unit/test_normalizer.py::test_clean_phone_keep_plus PASSED                               [ 18%]
-tests/unit/test_normalizer.py::test_clean_phone_multiple PASSED                                [ 20%]
-tests/unit/test_normalizer.py::test_clean_phone_separators PASSED                              [ 21%]
-tests/unit/test_normalizer.py::test_clean_phone_empty PASSED                                   [ 23%]
-tests/unit/test_normalizer.py::test_clean_phone_invalid PASSED                                 [ 24%]
-tests/unit/test_normalizer.py::test_clean_phone_comment PASSED                                 [ 26%]
-tests/unit/test_normalizer.py::test_clean_phone_short FAILED                                   [ 27%]
-tests/unit/test_normalizer.py::test_clean_phone_short2 FAILED                                  [ 29%]
-tests/unit/test_normalizer.py::test_clean_phone_8_800 PASSED                                   [ 30%]
-tests/unit/test_normalizer.py::test_clean_phone_multiple_mixed PASSED                          [ 32%]
-tests/unit/test_normalizer.py::test_clean_phone_complex_mixed PASSED                           [ 33%]
-tests/unit/test_normalizer.py::test_clean_email_single PASSED                                  [ 35%]
-tests/unit/test_normalizer.py::test_clean_email_multiple PASSED                                [ 36%]
-tests/unit/test_normalizer.py::test_clean_email_duplicates PASSED                              [ 38%]
-tests/unit/test_normalizer.py::test_clean_email_invalid PASSED                                 [ 40%]
-tests/unit/test_normalizer.py::test_clean_email_cyrillic FAILED                                [ 41%]
-tests/unit/test_normalizer.py::test_clean_email_mixed_separators PASSED                        [ 43%]
-tests/unit/test_normalizer.py::test_clean_inn_ok PASSED                                        [ 44%]
-tests/unit/test_normalizer.py::test_clean_inn_symbols PASSED                                   [ 46%]
-tests/unit/test_normalizer.py::test_clean_inn_wrong_length PASSED                              [ 47%]
-tests/unit/test_normalizer.py::test_clean_inn_zero_prefix PASSED                               [ 49%]
-tests/unit/test_normalizer.py::test_clean_short_name PASSED                                    [ 50%]
-tests/unit/test_normalizer.py::test_clean_short_name_ip PASSED                                 [ 52%]
-tests/unit/test_normalizer.py::test_clean_short_name_comma PASSED                              [ 53%]
-tests/unit/test_normalizer.py::test_clean_short_name_opf_end PASSED                            [ 55%]
-tests/unit/test_normalizer.py::test_clean_short_name_ip_end PASSED                             [ 56%]
-tests/unit/test_normalizer.py::test_clean_short_name_many_opf PASSED                           [ 58%]
-tests/unit/test_normalizer.py::test_clean_full_name_expand PASSED                              [ 60%]
-tests/unit/test_normalizer.py::test_clean_full_name_already_expanded PASSED                    [ 61%]
-tests/unit/test_normalizer.py::test_clean_full_name_quotes PASSED                              [ 63%]
-tests/unit/test_normalizer.py::test_clean_address FAILED                                       [ 64%]
-tests/unit/test_normalizer.py::test_clean_address_newline FAILED                               [ 66%]
-tests/unit/test_normalizer.py::test_clean_address_flat FAILED                                  [ 67%]
-tests/unit/test_normalizer.py::test_clean_address_vladenie PASSED                              [ 69%]
-tests/unit/test_normalizer.py::test_clean_address_index_city FAILED                            [ 70%]
-tests/unit/test_normalizer.py::test_clean_address_prospekt PASSED                              [ 72%]
-tests/unit/test_normalizer.py::test_clean_address_stroenie PASSED                              [ 73%]
-tests/unit/test_normalizer.py::test_clean_address_ulitsa_full PASSED                           [ 75%]
-tests/unit/test_quality.py::test_quality_score_range PASSED                                    [ 76%]
-tests/unit/test_quality.py::test_quality_metrics_exist PASSED                                  [ 78%]
-tests/unit/test_quality.py::test_quality_empty_df PASSED                                       [ 80%]
-tests/unit/test_quality.py::test_quality_no_mvp_columns PASSED                                 [ 81%]
-tests/unit/test_quality.py::test_quality_all_nan FAILED                                        [ 83%]
-tests/unit/test_quality.py::test_quality_perfect_data FAILED                                   [ 84%]
-tests/unit/test_quality.py::test_quality_with_duplicates FAILED                                [ 86%]
-tests/unit/test_source_loader.py::test_map_columns_known_fields PASSED                         [ 87%]
-tests/unit/test_source_loader.py::test_map_columns_unknown_field PASSED                        [ 89%]
-tests/unit/test_source_loader.py::test_normalize_columns PASSED                                [ 90%]
-tests/unit/test_source_loader.py::test_validate_required_columns_ok PASSED                     [ 92%]
-tests/unit/test_source_loader.py::test_validate_required_columns_warning PASSED                [ 93%]
-tests/unit/test_source_loader.py::test_validate_multiple_required_columns PASSED               [ 95%]
-tests/unit/test_source_mapper.py::test_filter_columns_removes_extra PASSED                     [ 96%]
-tests/unit/test_source_mapper.py::test_filter_columns_adds_missing PASSED                      [ 98%]
-tests/unit/test_source_mapper.py::test_process_file PASSED                                     [100%]
-
-============================================== FAILURES ==============================================
-_______________________________________ test_clean_phone_short _______________________________________
-
-    def test_clean_phone_short():
-        result = clean_phone("112")
->       assert result == "112"
-E       AssertionError: assert '+7112' == '112'
-E         
-E         - 112
-E         + +7112
-E         ? ++
-
-tests/unit/test_normalizer.py:77: AssertionError
-______________________________________ test_clean_phone_short2 _______________________________________
-
-    def test_clean_phone_short2():
-        result = clean_phone("01")
->       assert result == "01"
-E       AssertionError: assert '+701' == '01'
-E         
-E         - 01
-E         + +701
-
-tests/unit/test_normalizer.py:82: AssertionError
-_____________________________________ test_clean_email_cyrillic ______________________________________
-
-    def test_clean_email_cyrillic():
-        result = clean_email("почта@почта.рф")                          #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
->       assert result == "почта@почта.рф"
-E       AssertionError: assert None == 'почта@почта.рф'
-
-tests/unit/test_normalizer.py:147: AssertionError
-_________________________________________ test_clean_address _________________________________________
-
-    def test_clean_address():
-    
-        result = clean_address(
-            "ул. Ленина, д. 5 корп.2"
-        )
-    
->       assert result == "Ленина, 5 корп2"             #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       AssertionError: assert 'ул. Ленина, 5 корп2' == 'Ленина, 5 корп2'
-E         
-E         - Ленина, 5 корп2
-E         + ул. Ленина, 5 корп2
-E         ? ++++
-
-tests/unit/test_normalizer.py:279: AssertionError
-_____________________________________ test_clean_address_newline _____________________________________
-
-    def test_clean_address_newline():
-    
-        result = clean_address(
-            "ул.\nЛенина,\nд.5"
-        )
-    
->       assert result == "Ленина, 5"                   #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       AssertionError: assert 'ул. Ленина, 5' == 'Ленина, 5'
-E         
-E         - Ленина, 5
-E         + ул. Ленина, 5
-E         ? ++++
-
-tests/unit/test_normalizer.py:292: AssertionError
-______________________________________ test_clean_address_flat _______________________________________
-
-    def test_clean_address_flat():
-        result = clean_address("ул. Ленина, д. 5, кв. 13")
->       assert result == "Ленина, 5, кв. 13"  # ул. не удаляется, кв. не обрабатывается
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       AssertionError: assert 'ул. Ленина, 5, кв. 13' == 'Ленина, 5, кв. 13'
-E         
-E         - Ленина, 5, кв. 13
-E         + ул. Ленина, 5, кв. 13
-E         ? ++++
-
-tests/unit/test_normalizer.py:307: AssertionError
-___________________________________ test_clean_address_index_city ____________________________________
-
-    def test_clean_address_index_city():
-        result = clean_address("123458, г. Москва, ул. Маршала Катукова, д. 24")
->       assert result == "123458, г. Москва, Маршала Катукова, 24"
-E       AssertionError: assert '123458, г. М... Катукова, 24' == '123458, г. М... Катукова, 24'
-E         
-E         - 123458, г. Москва, Маршала Катукова, 24
-E         + 123458, г. Москва, ул. Маршала Катукова, 24
-E         ?                    ++++
-
-tests/unit/test_normalizer.py:315: AssertionError
-________________________________________ test_quality_all_nan ________________________________________
-
-    def test_quality_all_nan():
-        df = pd.DataFrame({"inn": [None, None], "phone": [None, None],
-                           "email": [None, None], "address": [None, None]})
-        res = calculate_data_quality_score(df, {"rows_affected": 0})
-        assert res["metrics"]["completeness"] == 0.0
-        assert res["metrics"]["accuracy"] == 0.0
->       assert res["metrics"]["consistency"] == 1.0  # все "nan" -> длина 3, считается единообразным
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       assert 0.5 == 1.0
-
-tests/unit/test_quality.py:75: AssertionError
-_____________________________________ test_quality_perfect_data ______________________________________
-
-    def test_quality_perfect_data():
-        df = pd.DataFrame({
-            "inn": ["1234567890", "0987654321"],
-            "phone": ["+79991234567", "+79001112233"],
-            "email": ["a@b.ru", "c@d.ru"],
-            "address": ["Ленина, 5", "Мира, 10"]
-        })
-        dedup = {"rows_affected": 0}
-        res = calculate_data_quality_score(df, dedup)
->       assert res["overall_quality_score"] == 1.0
-E       assert np.float64(0.99) == 1.0
-
-tests/unit/test_quality.py:89: AssertionError
-____________________________________ test_quality_with_duplicates ____________________________________
-
-    def test_quality_with_duplicates():
-        df = pd.DataFrame({
-            "inn": ["1234567890", "1234567890"],
-            "phone": ["+79991234567", "+79991234567"],
-            "email": ["a@b.ru", "a@b.ru"],
-            "address": ["Ленина, 5", "Ленина, 5"]
-        })
-        dedup = {"rows_affected": 2}
-        res = calculate_data_quality_score(df, dedup)
-        assert res["metrics"]["uniqueness"] == 0.0
->       assert res["overall_quality_score"] == 0.5
-E       assert np.float64(0.74) == 0.5
-
-tests/unit/test_quality.py:102: AssertionError
-====================================== short test summary info =======================================
+# ============================================================
+# РЕЗУЛЬТАТ
+# ============================================================
 FAILED tests/unit/test_normalizer.py::test_clean_phone_short - AssertionError: assert '+7112' == '112'
 FAILED tests/unit/test_normalizer.py::test_clean_phone_short2 - AssertionError: assert '+701' == '01'
 FAILED tests/unit/test_normalizer.py::test_clean_email_cyrillic - AssertionError: assert None == 'почта@почта.рф'
 FAILED tests/unit/test_normalizer.py::test_clean_address - AssertionError: assert 'ул. Ленина, 5 корп2' == 'Ленина, 5 корп2'
 FAILED tests/unit/test_normalizer.py::test_clean_address_newline - AssertionError: assert 'ул. Ленина, 5' == 'Ленина, 5'
 FAILED tests/unit/test_normalizer.py::test_clean_address_flat - AssertionError: assert 'ул. Ленина, 5, кв. 13' == 'Ленина, 5, кв. 13'
-FAILED tests/unit/test_normalizer.py::test_clean_address_index_city - AssertionError: assert '123458, г. М... Катукова, 24' == '123458, г. М... Катукова, 24'
-FAILED tests/unit/test_quality.py::test_quality_all_nan - assert 0.5 == 1.0
-FAILED tests/unit/test_quality.py::test_quality_perfect_data - assert np.float64(0.99) == 1.0
-FAILED tests/unit/test_quality.py::test_quality_with_duplicates - assert np.float64(0.74) == 0.5
-=================================== 10 failed, 55 passed in 0.39s ====================================
-(4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % pytest tests/unit --cov=service --cov-report=term-missing
-======================================== test session starts =========================================
-platform darwin -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+FAILED tests/unit/test_normalizer.py::test_clean_address_index_city - AssertionError: assert '123458, г. М... Катукова, 24' == '123458, г. М....
+======================= 7 failed, 58 passed in 0.58s =======================
+
+
+
+
+
+
+(4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % pytest tests/unit -v
+=========================== test session starts ============================
+platform darwin -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0 -- /Users/nana_vitol/miniforge3/envs/4dk/bin/python3.13
+cachedir: .pytest_cache
 rootdir: /Users/nana_vitol/4dk/ETL_4dk
 plugins: cov-7.1.0, anyio-4.14.1
-collected 65 items                                                                                   
+collected 65 items                                                         
 
-tests/unit/test_deduplicator.py .....                                                          [  7%]
-tests/unit/test_exporter.py .                                                                  [  9%]
-tests/unit/test_exporter_extra.py ....                                                         [ 15%]
-tests/unit/test_normalizer.py .......FF.......F..............FFF.F...                          [ 75%]
-tests/unit/test_quality.py ....FFF                                                             [ 86%]
-tests/unit/test_source_loader.py ......                                                        [ 95%]
-tests/unit/test_source_mapper.py ...                                                           [100%]
+tests/unit/test_deduplicator.py::test_duplicates_none PASSED         [  1%]
+tests/unit/test_deduplicator.py::test_duplicates_partial PASSED      [  3%]
+tests/unit/test_deduplicator.py::test_duplicates_full PASSED         [  4%]
+tests/unit/test_deduplicator.py::test_duplicates_with_nan PASSED     [  6%]
+tests/unit/test_deduplicator.py::test_duplicates_empty_df PASSED     [  7%]
+tests/unit/test_exporter.py::test_export_to_excel PASSED             [  9%]
+tests/unit/test_exporter_extra.py::test_export_simple PASSED         [ 10%]
+tests/unit/test_exporter_extra.py::test_export_mapper_error PASSED   [ 12%]
+tests/unit/test_exporter_extra.py::test_export_mapper_empty PASSED   [ 13%]
+tests/unit/test_exporter_extra.py::test_export_mapper_ok PASSED      [ 15%]
+tests/unit/test_normalizer.py::test_clean_phone_replace_8 PASSED     [ 16%]
+tests/unit/test_normalizer.py::test_clean_phone_keep_plus PASSED     [ 18%]
+tests/unit/test_normalizer.py::test_clean_phone_multiple PASSED      [ 20%]
+tests/unit/test_normalizer.py::test_clean_phone_separators PASSED    [ 21%]
+tests/unit/test_normalizer.py::test_clean_phone_empty PASSED         [ 23%]
+tests/unit/test_normalizer.py::test_clean_phone_invalid PASSED       [ 24%]
+tests/unit/test_normalizer.py::test_clean_phone_comment PASSED       [ 26%]
+tests/unit/test_normalizer.py::test_clean_phone_short FAILED         [ 27%]
+tests/unit/test_normalizer.py::test_clean_phone_short2 FAILED        [ 29%]
+tests/unit/test_normalizer.py::test_clean_phone_8_800 PASSED         [ 30%]
+tests/unit/test_normalizer.py::test_clean_phone_multiple_mixed PASSED [ 32%]
+tests/unit/test_normalizer.py::test_clean_phone_complex_mixed PASSED [ 33%]
+tests/unit/test_normalizer.py::test_clean_email_single PASSED        [ 35%]
+tests/unit/test_normalizer.py::test_clean_email_multiple PASSED      [ 36%]
+tests/unit/test_normalizer.py::test_clean_email_duplicates PASSED    [ 38%]
+tests/unit/test_normalizer.py::test_clean_email_invalid PASSED       [ 40%]
+tests/unit/test_normalizer.py::test_clean_email_cyrillic FAILED      [ 41%]
+tests/unit/test_normalizer.py::test_clean_email_mixed_separators PASSED [ 43%]
+tests/unit/test_normalizer.py::test_clean_inn_ok PASSED              [ 44%]
+tests/unit/test_normalizer.py::test_clean_inn_symbols PASSED         [ 46%]
+tests/unit/test_normalizer.py::test_clean_inn_wrong_length PASSED    [ 47%]
+tests/unit/test_normalizer.py::test_clean_inn_zero_prefix PASSED     [ 49%]
+tests/unit/test_normalizer.py::test_clean_short_name PASSED          [ 50%]
+tests/unit/test_normalizer.py::test_clean_short_name_ip PASSED       [ 52%]
+tests/unit/test_normalizer.py::test_clean_short_name_comma PASSED    [ 53%]
+tests/unit/test_normalizer.py::test_clean_short_name_opf_end PASSED  [ 55%]
+tests/unit/test_normalizer.py::test_clean_short_name_ip_end PASSED   [ 56%]
+tests/unit/test_normalizer.py::test_clean_short_name_many_opf PASSED [ 58%]
+tests/unit/test_normalizer.py::test_clean_full_name_expand PASSED    [ 60%]
+tests/unit/test_normalizer.py::test_clean_full_name_already_expanded PASSED [ 61%]
+tests/unit/test_normalizer.py::test_clean_full_name_quotes PASSED    [ 63%]
+tests/unit/test_normalizer.py::test_clean_address FAILED             [ 64%]
+tests/unit/test_normalizer.py::test_clean_address_newline FAILED     [ 66%]
+tests/unit/test_normalizer.py::test_clean_address_flat FAILED        [ 67%]
+tests/unit/test_normalizer.py::test_clean_address_vladenie PASSED    [ 69%]
+tests/unit/test_normalizer.py::test_clean_address_index_city FAILED  [ 70%]
+tests/unit/test_normalizer.py::test_clean_address_prospekt PASSED    [ 72%]
+tests/unit/test_normalizer.py::test_clean_address_stroenie PASSED    [ 73%]
+tests/unit/test_normalizer.py::test_clean_address_ulitsa_full PASSED [ 75%]
+tests/unit/test_quality.py::test_quality_score_range PASSED          [ 76%]
+tests/unit/test_quality.py::test_quality_metrics_exist PASSED        [ 78%]
+tests/unit/test_quality.py::test_quality_empty_df PASSED             [ 80%]
+tests/unit/test_quality.py::test_quality_no_mvp_columns PASSED       [ 81%]
+tests/unit/test_quality.py::test_quality_all_nan PASSED              [ 83%]
+tests/unit/test_quality.py::test_quality_perfect_data PASSED         [ 84%]
+tests/unit/test_quality.py::test_quality_with_duplicates PASSED      [ 86%]
+tests/unit/test_source_loader.py::test_map_columns_known_fields PASSED [ 87%]
+tests/unit/test_source_loader.py::test_map_columns_unknown_field PASSED [ 89%]
+tests/unit/test_source_loader.py::test_normalize_columns PASSED      [ 90%]
+tests/unit/test_source_loader.py::test_validate_required_columns_ok PASSED [ 92%]
+tests/unit/test_source_loader.py::test_validate_required_columns_warning PASSED [ 93%]
+tests/unit/test_source_loader.py::test_validate_multiple_required_columns PASSED [ 95%]
+tests/unit/test_source_mapper.py::test_filter_columns_removes_extra PASSED [ 96%]
+tests/unit/test_source_mapper.py::test_filter_columns_adds_missing PASSED [ 98%]
+tests/unit/test_source_mapper.py::test_process_file PASSED           [100%]
 
-============================================== FAILURES ==============================================
-_______________________________________ test_clean_phone_short _______________________________________
+================================= FAILURES =================================
+__________________________ test_clean_phone_short __________________________
 
     def test_clean_phone_short():
         result = clean_phone("112")
@@ -247,7 +102,7 @@ E         + +7112
 E         ? ++
 
 tests/unit/test_normalizer.py:77: AssertionError
-______________________________________ test_clean_phone_short2 _______________________________________
+_________________________ test_clean_phone_short2 __________________________
 
     def test_clean_phone_short2():
         result = clean_phone("01")
@@ -258,7 +113,7 @@ E         - 01
 E         + +701
 
 tests/unit/test_normalizer.py:82: AssertionError
-_____________________________________ test_clean_email_cyrillic ______________________________________
+________________________ test_clean_email_cyrillic _________________________
 
     def test_clean_email_cyrillic():
         result = clean_email("почта@почта.рф")                          #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
@@ -266,7 +121,7 @@ _____________________________________ test_clean_email_cyrillic ________________
 E       AssertionError: assert None == 'почта@почта.рф'
 
 tests/unit/test_normalizer.py:147: AssertionError
-_________________________________________ test_clean_address _________________________________________
+____________________________ test_clean_address ____________________________
 
     def test_clean_address():
     
@@ -283,7 +138,7 @@ E         + ул. Ленина, 5 корп2
 E         ? ++++
 
 tests/unit/test_normalizer.py:279: AssertionError
-_____________________________________ test_clean_address_newline _____________________________________
+________________________ test_clean_address_newline ________________________
 
     def test_clean_address_newline():
     
@@ -300,7 +155,7 @@ E         + ул. Ленина, 5
 E         ? ++++
 
 tests/unit/test_normalizer.py:292: AssertionError
-______________________________________ test_clean_address_flat _______________________________________
+_________________________ test_clean_address_flat __________________________
 
     def test_clean_address_flat():
         result = clean_address("ул. Ленина, д. 5, кв. 13")
@@ -313,7 +168,7 @@ E         + ул. Ленина, 5, кв. 13
 E         ? ++++
 
 tests/unit/test_normalizer.py:307: AssertionError
-___________________________________ test_clean_address_index_city ____________________________________
+______________________ test_clean_address_index_city _______________________
 
     def test_clean_address_index_city():
         result = clean_address("123458, г. Москва, ул. Маршала Катукова, д. 24")
@@ -325,79 +180,142 @@ E         + 123458, г. Москва, ул. Маршала Катукова, 24
 E         ?                    ++++
 
 tests/unit/test_normalizer.py:315: AssertionError
-________________________________________ test_quality_all_nan ________________________________________
+========================= short test summary info ==========================
+FAILED tests/unit/test_normalizer.py::test_clean_phone_short - AssertionError: assert '+7112' == '112'
+FAILED tests/unit/test_normalizer.py::test_clean_phone_short2 - AssertionError: assert '+701' == '01'
+FAILED tests/unit/test_normalizer.py::test_clean_email_cyrillic - AssertionError: assert None == 'почта@почта.рф'
+FAILED tests/unit/test_normalizer.py::test_clean_address - AssertionError: assert 'ул. Ленина, 5 корп2' == 'Ленина, 5 корп2'
+FAILED tests/unit/test_normalizer.py::test_clean_address_newline - AssertionError: assert 'ул. Ленина, 5' == 'Ленина, 5'
+FAILED tests/unit/test_normalizer.py::test_clean_address_flat - AssertionError: assert 'ул. Ленина, 5, кв. 13' == 'Ленина, 5, кв. 13'
+FAILED tests/unit/test_normalizer.py::test_clean_address_index_city - AssertionError: assert '123458, г. М... Катукова, 24' == '123458, г. М....
+======================= 7 failed, 58 passed in 0.37s =======================
+(4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % pytest tests/unit --cov=service --cov-report=term-missing
+=========================== test session starts ============================
+platform darwin -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/nana_vitol/4dk/ETL_4dk
+plugins: cov-7.1.0, anyio-4.14.1
+collected 65 items                                                         
 
-    def test_quality_all_nan():
-        df = pd.DataFrame({"inn": [None, None], "phone": [None, None],
-                           "email": [None, None], "address": [None, None]})
-        res = calculate_data_quality_score(df, {"rows_affected": 0})
-        assert res["metrics"]["completeness"] == 0.0
-        assert res["metrics"]["accuracy"] == 0.0
->       assert res["metrics"]["consistency"] == 1.0  # все "nan" -> длина 3, считается единообразным
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       assert 0.5 == 1.0
+tests/unit/test_deduplicator.py .....                                [  7%]
+tests/unit/test_exporter.py .                                        [  9%]
+tests/unit/test_exporter_extra.py ....                               [ 15%]
+tests/unit/test_normalizer.py .......FF.......F..............FFF.F.. [ 73%]
+.                                                                    [ 75%]
+tests/unit/test_quality.py .......                                   [ 86%]
+tests/unit/test_source_loader.py ......                              [ 95%]
+tests/unit/test_source_mapper.py ...                                 [100%]
 
-tests/unit/test_quality.py:75: AssertionError
-_____________________________________ test_quality_perfect_data ______________________________________
+================================= FAILURES =================================
+__________________________ test_clean_phone_short __________________________
 
-    def test_quality_perfect_data():
-        df = pd.DataFrame({
-            "inn": ["1234567890", "0987654321"],
-            "phone": ["+79991234567", "+79001112233"],
-            "email": ["a@b.ru", "c@d.ru"],
-            "address": ["Ленина, 5", "Мира, 10"]
-        })
-        dedup = {"rows_affected": 0}
-        res = calculate_data_quality_score(df, dedup)
->       assert res["overall_quality_score"] == 1.0
-E       assert np.float64(0.99) == 1.0
+    def test_clean_phone_short():
+        result = clean_phone("112")
+>       assert result == "112"
+E       AssertionError: assert '+7112' == '112'
+E         
+E         - 112
+E         + +7112
+E         ? ++
 
-tests/unit/test_quality.py:89: AssertionError
-____________________________________ test_quality_with_duplicates ____________________________________
+tests/unit/test_normalizer.py:77: AssertionError
+_________________________ test_clean_phone_short2 __________________________
 
-    def test_quality_with_duplicates():
-        df = pd.DataFrame({
-            "inn": ["1234567890", "1234567890"],
-            "phone": ["+79991234567", "+79991234567"],
-            "email": ["a@b.ru", "a@b.ru"],
-            "address": ["Ленина, 5", "Ленина, 5"]
-        })
-        dedup = {"rows_affected": 2}
-        res = calculate_data_quality_score(df, dedup)
-        assert res["metrics"]["uniqueness"] == 0.0
->       assert res["overall_quality_score"] == 0.5
-E       assert np.float64(0.74) == 0.5
+    def test_clean_phone_short2():
+        result = clean_phone("01")
+>       assert result == "01"
+E       AssertionError: assert '+701' == '01'
+E         
+E         - 01
+E         + +701
 
-tests/unit/test_quality.py:102: AssertionError
-=========================================== tests coverage ===========================================
-_________________________ coverage: platform darwin, python 3.13.14-final-0 __________________________
+tests/unit/test_normalizer.py:82: AssertionError
+________________________ test_clean_email_cyrillic _________________________
+
+    def test_clean_email_cyrillic():
+        result = clean_email("почта@почта.рф")                          #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
+>       assert result == "почта@почта.рф"
+E       AssertionError: assert None == 'почта@почта.рф'
+
+tests/unit/test_normalizer.py:147: AssertionError
+____________________________ test_clean_address ____________________________
+
+    def test_clean_address():
+    
+        result = clean_address(
+            "ул. Ленина, д. 5 корп.2"
+        )
+    
+>       assert result == "Ленина, 5 корп2"             #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ул. Ленина, 5 корп2' == 'Ленина, 5 корп2'
+E         
+E         - Ленина, 5 корп2
+E         + ул. Ленина, 5 корп2
+E         ? ++++
+
+tests/unit/test_normalizer.py:279: AssertionError
+________________________ test_clean_address_newline ________________________
+
+    def test_clean_address_newline():
+    
+        result = clean_address(
+            "ул.\nЛенина,\nд.5"
+        )
+    
+>       assert result == "Ленина, 5"                   #⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅⬅
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ул. Ленина, 5' == 'Ленина, 5'
+E         
+E         - Ленина, 5
+E         + ул. Ленина, 5
+E         ? ++++
+
+tests/unit/test_normalizer.py:292: AssertionError
+_________________________ test_clean_address_flat __________________________
+
+    def test_clean_address_flat():
+        result = clean_address("ул. Ленина, д. 5, кв. 13")
+>       assert result == "Ленина, 5, кв. 13"  # ул. не удаляется, кв. не обрабатывается
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ул. Ленина, 5, кв. 13' == 'Ленина, 5, кв. 13'
+E         
+E         - Ленина, 5, кв. 13
+E         + ул. Ленина, 5, кв. 13
+E         ? ++++
+
+tests/unit/test_normalizer.py:307: AssertionError
+______________________ test_clean_address_index_city _______________________
+
+    def test_clean_address_index_city():
+        result = clean_address("123458, г. Москва, ул. Маршала Катукова, д. 24")
+>       assert result == "123458, г. Москва, Маршала Катукова, 24"
+E       AssertionError: assert '123458, г. М... Катукова, 24' == '123458, г. М... Катукова, 24'
+E         
+E         - 123458, г. Москва, Маршала Катукова, 24
+E         + 123458, г. Москва, ул. Маршала Катукова, 24
+E         ?                    ++++
+
+tests/unit/test_normalizer.py:315: AssertionError
+============================== tests coverage ==============================
+____________ coverage: platform darwin, python 3.13.14-final-0 _____________
 
 Name                                         Stmts   Miss  Cover   Missing
 --------------------------------------------------------------------------
 service/deduplicator/get_duplicates.py          72      1    99%   117
 service/exporter/exporter.py                    43      4    91%   78-79, 141-142
 service/normalizer/normalizer.py               113     17    85%   13, 56, 102, 119, 156, 177, 233, 271-285, 306
-service/quality/quality.py                      49      2    96%   89-90
+service/quality/quality.py                      52      5    90%   119-125
 service/source_processing/source_loader.py     113     67    41%   150-166, 197, 224-237, 247-268, 286, 344-394
 service/source_processing/source_mapper.py     111     40    64%   145-156, 167, 190, 275, 309-314, 343-371
 --------------------------------------------------------------------------
-TOTAL                                          501    131    74%
-
-# ============================================================
-# РЕЗУЛЬТАТ
-# ============================================================
-
-
-====================================== short test summary info =======================================
+TOTAL                                          504    134    73%
+========================= short test summary info ==========================
 FAILED tests/unit/test_normalizer.py::test_clean_phone_short - AssertionError: assert '+7112' == '112'
 FAILED tests/unit/test_normalizer.py::test_clean_phone_short2 - AssertionError: assert '+701' == '01'
 FAILED tests/unit/test_normalizer.py::test_clean_email_cyrillic - AssertionError: assert None == 'почта@почта.рф'
 FAILED tests/unit/test_normalizer.py::test_clean_address - AssertionError: assert 'ул. Ленина, 5 корп2' == 'Ленина, 5 корп2'
 FAILED tests/unit/test_normalizer.py::test_clean_address_newline - AssertionError: assert 'ул. Ленина, 5' == 'Ленина, 5'
 FAILED tests/unit/test_normalizer.py::test_clean_address_flat - AssertionError: assert 'ул. Ленина, 5, кв. 13' == 'Ленина, 5, кв. 13'
-FAILED tests/unit/test_normalizer.py::test_clean_address_index_city - AssertionError: assert '123458, г. М... Катукова, 24' == '123458, г. М... Катукова, 24'
-FAILED tests/unit/test_quality.py::test_quality_all_nan - assert 0.5 == 1.0
-FAILED tests/unit/test_quality.py::test_quality_perfect_data - assert np.float64(0.99) == 1.0
-FAILED tests/unit/test_quality.py::test_quality_with_duplicates - assert np.float64(0.74) == 0.5
-=================================== 10 failed, 55 passed in 0.59s ====================================
+FAILED tests/unit/test_normalizer.py::test_clean_address_index_city - AssertionError: assert '123458, г. М... Катукова, 24' == '123458, г. М....
+======================= 7 failed, 58 passed in 0.58s =======================
 (4dk) nana_vitol@MacBook-Air-Misana ETL_4dk % 

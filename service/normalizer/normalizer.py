@@ -9,7 +9,7 @@ def clean_phone(phone_raw):
     Если номер уже содержит +, он сохраняется.
     Несколько номеров в одной ячейке объединяются через ', '.
     """
-    if pd.isna(phone_raw):
+    if pd.isna(phone_raw) or not isinstance(phone_raw, str):
         return phone_raw
 
     # Разбиваем по основным разделителям (точка с запятой, запятая, слэш, вертикальная черта)
@@ -42,8 +42,7 @@ def clean_phone(phone_raw):
             if digits.startswith('7'):
                 cleaned = '+' + digits
             else:
-                # На случай, если номер не содержит кода страны – добавляем '+7' (можно изменить по необходимости)
-                cleaned = '+7' + digits
+                cleaned = digits
 
         cleaned_parts.append(cleaned)
 
@@ -51,25 +50,22 @@ def clean_phone(phone_raw):
     return ', '.join(cleaned_parts) if cleaned_parts else None
 
 
-def clean_inn(inn_raw):
-    if pd.isna(inn_raw):
+def clean_inn(inn):
+    if pd.isna(inn) or not isinstance(inn, str):
         return None
     
-    # что будет возвращать
-    inn_result = ""
-    
-    inn_str = str(inn_raw).strip()
+    inn = inn.strip()
     
     # Удаляем все нецифровые символы
-    inn_result = re.sub(r'\D', '', inn_str)
+    inn = re.sub(r'\D', '', inn)
     
-    if len(inn_result) != 10 and len(inn_result) != 12:
+    if len(inn) != 10 and len(inn) != 12:
         return "Неверный формат ИНН"
     
-    if inn_result[:2] == "00":
+    if inn[:2] == "00":
         return "Неверный формат ИНН"
-    
-    return inn_result
+
+    return inn
 
 
 
@@ -96,13 +92,12 @@ def clean_email(email_str):
         исходное значение - если оно не является строкой или равно NaN.
     """
 
-    # Если в ячейке пусто (NaN) или там не текст (например, число)
-    # то ничего не делаем и возвращаем как есть, чтобы не было ошибки
+    # Если в ячейке пусто (NaN), то ничего не делаем и возвращаем как есть, чтобы не было ошибки
     if pd.isna(email_str) or not isinstance(email_str, str):
         return email_str
 
     # Шаблон, который описывает, как должен выглядеть правильный email
-    pattern = r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+    pattern = r'(?i)[A-Za-zа-яё0-9._%+-]+@[A-Za-zа-яё0-9.-]+\.[A-Za-zа-яё]{2,}'
 
     # Режем длинную строку на кусочки, если там используются разделители: ; , / | или перенос строки
     parts = re.split(r'[;,/|\n]+', email_str)
@@ -152,7 +147,7 @@ def clean_short_name(name):
         'Picaso 3d'                 → 'PICASO 3D'
         'А-сбыт, торговая компания' → 'А-СБЫТ'
     """
-    if pd.isna(name):
+    if pd.isna(name) or not isinstance(name, str):
         return ''
     
     name = name.strip()
@@ -229,7 +224,7 @@ def clean_full_name(name):
         'ООО ПО СМЗ'
             → 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ ПРОИЗВОДСТВЕННОЕ ОБЪЕДИНЕНИЕ СМЗ'
     """
-    if pd.isna(name):
+    if pd.isna(name) or not isinstance(name, str):
         return ''
     
     name = name.strip()
@@ -310,11 +305,7 @@ def clean_address(address):
     address = re.sub(r'\s+', ' ', address).strip()
 
     # нормализуем тип улицы
-    address = re.sub(
-        r'\b(улица|ул\.)\b',
-        '',
-        address
-    )
+    address = re.sub(r'\b(улица|ул\.)\s*', '', address)
 
     # приводим строение к стр1
     address = re.sub(

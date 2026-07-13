@@ -146,7 +146,7 @@ def export_with_report(df: pd.DataFrame,
             'error': str(e)
         }
 
-
+# метод сохраняющий excel
 def export_from_mapper(mapper_result: dict,
                        output_folder: str = "output") -> dict:
     """
