@@ -1,6 +1,6 @@
 import pandas as pd
 
-from service.source_processing.source_loader import (
+from service.source_loader.source_loader import (
     map_columns,
     normalize_columns,
     validate_required_columns,

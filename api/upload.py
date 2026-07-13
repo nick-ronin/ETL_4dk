@@ -17,21 +17,13 @@ from fastapi import File
 from fastapi import HTTPException
 from fastapi import UploadFile
 
-
-# loader, mapper, validator
-from service.source_processing.source_loader import process_uploaded_file
-from service.source_processing.source_mapper import process_file, MVP_COLUMNS
-
-# normalizer 
+from service.source_loader.source_loader import process_uploaded_file
+from service.source_mapper.source_mapper import process_file
+from service.source_mapper.constants import MVP_COLUMNS
 from service.normalizer.normalizer import clean_inn, clean_phone, clean_email, normalize_company_names, clean_address
-
-# deduplicator
 from service.deduplicator.get_duplicates import get_duplicates
-
-# data quality score
 from service.quality.quality import calculate_data_quality_score
-
-from service.exporter.exporter import export_with_report
+from service.exporter.exporter import save_data, build_summary_text, save_report
 
 from service.logger.logger import get_log_writer
 
@@ -78,11 +70,13 @@ async def upload_file(file: UploadFile = File(...),
     extension = os.path.splitext(file.filename)[1]
     temp_path = None  # инициализируем заранее, чтобы избежать NameError
 
+    # получение метаданных об источнике
     source_name = file.filename
     source_type = source_name.split('.')[1]
     now = datetime.now()
     source_date = now.strftime("%d-%m-%Y")
 
+    # формирование информации для логгирования в файл по конкретному файлу
     log_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
     log_dir = "output/log"
     os.makedirs(log_dir, exist_ok=True)
@@ -100,11 +94,11 @@ async def upload_file(file: UploadFile = File(...),
             temp_path = temp.name
 
         # ================================================
-        # ШАГ 1: SourceLoader — загрузка и маппинг колонок
+        # ШАГ 1: Загрузка файла и получение DataFrame
         # ================================================
         
         write("="*60)
-        write("ШАГ 1/4: SourceLoader — загрузка и маппинг колонок")
+        write("ШАГ 1/6: Загрузка файла и получение DataFrame")
         write("="*60)
 
         upload_result = process_uploaded_file(file_path=temp_path, log_file_path=log_path)
@@ -115,14 +109,14 @@ async def upload_file(file: UploadFile = File(...),
         df_raw = upload_result['df']
 
         # ================================================
-        # ШАГ 3: SourceMapper — маппинг и фильтрация колонок
+        # ШАГ 2: Маппинг, валидация обязательных колонок, фильтрация колонок
         # ================================================
 
         write("="*60)
-        write("ШАГ 2/4: SourceMapper — маппинг и фильтрация колонок")
+        write("ШАГ 2/6: Маппинг, валидация обязательных колонок, фильтрация колонок")
         write("="*60)
 
-        mapper_result = process_file(df=df_raw, required_columns=MVP_COLUMNS)
+        mapper_result = process_file(df=df_raw, required_columns=MVP_COLUMNS, log_file_path=log_path)
 
         if mapper_result["status"] == "ERROR":
             raise HTTPException(status_code=400, detail=mapper_result.get("error", "Ошибка маппера"))
@@ -130,11 +124,11 @@ async def upload_file(file: UploadFile = File(...),
         df = mapper_result["df"]
 
         # ================================================
-        # ШАГ 4: Нормализация данных
+        # ШАГ 3: Нормализация данных
         # ================================================
 
         write("="*60)
-        write("ШАГ 3/4: Нормализатор — очистка данных")
+        write("ШАГ 3/6: Нормализатор — очистка данных")
         write("="*60)
         
         df = normalize_company_names(df)
@@ -156,10 +150,10 @@ async def upload_file(file: UploadFile = File(...),
         df['has_phone'] = df['phone'].notna() & (df['phone'] != '') & (df['phone'] != '-')
 
         # ================================================
-        # ШАГ 5: Дедупликация
+        # ШАГ 4: Дедупликация
         # ================================================
         write("="*60)
-        write("ШАГ 4/4: Дедупликатор — поиск коллизий")
+        write("ШАГ 4/6: Дедупликатор — поиск коллизий")
         write("="*60)
 
         dup_columns = ['inn', 'email', 'phone', 'short_name']
@@ -180,10 +174,10 @@ async def upload_file(file: UploadFile = File(...),
         write(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
 
         # ================================================
-        # ШАГ 6: Расчёт качества данных
+        # ШАГ 5: Расчёт качества данных
         # ================================================
         write("="*60)
-        write("Расчёт качества данных")
+        write("ШАГ 5/6: Расчёт качества данных")
         write("="*60)
          
         quality_report = calculate_data_quality_score(df, dedup_result)
@@ -208,51 +202,57 @@ async def upload_file(file: UploadFile = File(...),
         clean_data = df.to_dict(orient='records')
 
         # ================================================
-        # ШАГ 7: Формирование архива на выдачу
+        # ШАГ 6: Формирование архива на выдачу
         # ================================================
         write("="*60)
-        write("Формирование архива для выдачи файлов")
+        write("ШАГ 6/6: Формирование архива для выдачи файлов")
         write("="*60)
 
         if download:
-            export_result = export_with_report(
-                df,
-                output_folder="output",
-                filename_main="cleaned_data",
-                filename_report="processing_report"
+            # 1. Экспорт очищенных данных
+            data_export = save_data(df, output_folder="output", base_name="cleaned_data")
+            if data_export['status'] == 'ERROR':
+                raise HTTPException(status_code=500, detail=data_export.get('error'))
+
+            # 2. Формирование текстового отчёта
+            report_text = build_summary_text(
+                filename=file.filename,
+                date=source_date,
+                rows=len(df),
+                mapper_result=mapper_result,
+                quality=quality_report,
+                dedup=dedup_result,
+                log_file_path=log_path
             )
 
-            if export_result["status"] == "ERROR":
-                raise HTTPException(status_code=500, detail=export_result.get("error", "Ошибка экспорта Excel"))
+            # 3. Сохранение отчёта в файл
+            report_export = save_report(report_text, output_folder="output", base_name="processing_report")
+            if report_export['status'] == 'ERROR':
+                raise HTTPException(status_code=500, detail=report_export.get('error'))
 
+            # 4. Подготовка архива
             archive_files = [
-                export_result.get("main_file"),
-                export_result.get("report_file"),
-                dedup_result.get("collisions_file"),
+                data_export['file_path'],          # cleaned_data.xlsx
+                report_export['file_path'],        # processing_report.txt
+                dedup_result.get('collisions_file') # collisions.xlsx
             ]
 
-            missing_files = [path for path in archive_files if not path or not os.path.exists(path)]
-            if missing_files:
-                raise HTTPException(status_code=500, detail=f"Не удалось собрать ZIP: отсутствуют файлы {missing_files}")
+            # Проверяем, что все файлы существуют
+            for path in archive_files:
+                if not path or not os.path.exists(path):
+                    raise HTTPException(status_code=500, detail=f"Файл не найден: {path}")
 
-            output = BytesIO()
-            with zipfile.ZipFile(output, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+            # Создаём ZIP
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
                 for file_path in archive_files:
-                    archive.write(file_path, arcname=os.path.basename(file_path))
-            output.seek(0)
+                    zf.write(file_path, arcname=os.path.basename(file_path))
+            zip_buffer.seek(0)
 
-            base_name = file.filename.rsplit('.', 1)[0]   # без расширения
-            safe_filename = f"cleaned_{base_name}.zip"
-            encoded_filename = quote(safe_filename, safe='')
-
-            headers = {
-                "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
-            }
-            return StreamingResponse(
-                output,
-                media_type="application/zip",
-                headers=headers
-            )
+            # Отдаём ответ
+            safe_filename = quote(f"cleaned_{file.filename.rsplit('.', 1)[0]}.zip", safe='')
+            headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"}
+            return StreamingResponse(zip_buffer, media_type="application/zip", headers=headers)
 
         return {
             "status": mapper_result["status"],
