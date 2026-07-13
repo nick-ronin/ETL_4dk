@@ -15,7 +15,7 @@ import pandas as pd
 import os
 from pathlib import Path
 
-from logger.logger import logger
+from service.logger.logger import logger
 
 # Импортируем маппинг из source_mapper, чтобы знать,
 # какие колонки должны быть прочитаны как строки
@@ -45,31 +45,6 @@ def _build_string_variants() -> set:
 # Кэшируем множество для производительности
 STRING_VARIANTS = _build_string_variants()
 
-
-def find_test_files(folder_path: str = "test_files") -> list:
-    """
-    Находит все Excel и CSV файлы в указанной папке.
-    Используется только для отладки/тестирования.
-    """
-    if not os.path.exists(folder_path):
-        logger.info(f"Папка не найдена: {folder_path}")
-        logger.info("Создайте папку 'test_files' и положите в неё Excel или CSV файлы")
-        return []
-
-    supported_extensions = ['.xlsx', '.xls', '.csv']
-    found_files = []
-
-    for file in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, file)
-        if os.path.isfile(file_path):
-            ext = Path(file_path).suffix.lower()
-            if ext in supported_extensions:
-                found_files.append(file_path)
-                logger.info(f"Найден файл: {file}")
-
-    return found_files
-
-
 # ============================================================
 # 2. ОСНОВНАЯ ФУНКЦИЯ ЗАГРУЗКИ
 # ============================================================
@@ -77,8 +52,7 @@ def find_test_files(folder_path: str = "test_files") -> list:
 def load_file(file_path: str) -> pd.DataFrame:
     """
     Загружает Excel или CSV файл.
-    Идентификаторы (ИНН, КПП, ОГРН и т.д.) принудительно читаются как строки,
-    чтобы сохранить ведущие нули и избежать экспоненциальной записи.
+    Идентификаторы (ИНН, КПП, ОГРН и т.д.) принудительно читаются как строки.
     """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Файл не найден: {file_path}")
@@ -123,8 +97,9 @@ def load_file(file_path: str) -> pd.DataFrame:
     except Exception as e:
         raise Exception(f"Ошибка при чтении файла: {str(e)}")
 
+# TODO: для чего нужен метод ниже?
 
-def process_uploaded_file(file_path: str) -> dict:
+def process_uploaded_file(file_path: str, log_file_path: str) -> dict:
     """
     Загружает файл и возвращает результат в формате, удобном для пайплайна.
     """

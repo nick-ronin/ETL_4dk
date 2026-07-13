@@ -16,7 +16,7 @@ import pandas as pd
 import os
 from datetime import datetime
 
-from logger.logger import logger
+from service.logger.logger import logger
 
 
 # ============================================================
@@ -244,7 +244,7 @@ def validate_required_columns(df: pd.DataFrame,
         'existing_columns': existing,
         'missing_columns': missing,
         'message': f"Найдено {len(existing)} из {len(required_columns)} обязательных колонок"
-    }
+    }   
     if missing:
         result['message'] += f". Отсутствуют: {', '.join(missing)}"
         logger.warning(f"ВНИМАНИЕ! Отсутствуют колонки: {', '.join(missing)}")
@@ -325,10 +325,9 @@ def process_file(df: pd.DataFrame,
     Параметры:
         df (pd.DataFrame): входные данные
         required_columns (list): список нужных колонок
-        output_folder (str): если указан, сохраняет файл
 
     Возвращает:
-        dict: с ключами 'status', 'df', 'stats', 'output_file'
+        dict: с ключами 'status', 'df', 'stats'
     """
     logger.info("=" * 60)
     logger.info("ЗАПУСК source_mapper")
