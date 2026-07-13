@@ -253,15 +253,18 @@ async def upload_file(file: UploadFile = File(...),
             safe_filename = quote(f"cleaned_{file.filename.rsplit('.', 1)[0]}.zip", safe='')
             headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"}
             return StreamingResponse(zip_buffer, media_type="application/zip", headers=headers)
-
-        return {
+        
+        response = {
             "status": mapper_result["status"],
-            "validation": str(upload_result.validation_info),
+            "validation": str(mapper_result.get("validation_result")),
             "rows": len(df),
             "columns": list(df.columns),
             "quality": quality_report,
             "data": clean_data
         }
+        response = clean_json_value(response)
+        return response
+
 
     finally:
         if temp_path and os.path.exists(temp_path):
