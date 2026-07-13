@@ -14,7 +14,7 @@
 import pandas as pd
 from datetime import datetime
 
-from logger.logger import logger
+from service.logger.logger import logger
 from service.source_processing.validator import validate_required_columns
 
 

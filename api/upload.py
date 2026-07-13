@@ -9,6 +9,7 @@ import tempfile
 import zipfile
 from datetime import datetime
 from urllib.parse import quote
+import hashlib
 import uuid
 
 from fastapi import APIRouter
@@ -32,7 +33,7 @@ from service.quality.quality import calculate_data_quality_score
 
 from service.exporter.exporter import export_with_report
 
-from logger.logger import logger
+from service.logger.logger import get_log_writer
 
 # вывод файла
 from io import BytesIO
@@ -63,7 +64,7 @@ def clean_json_value(obj):
 
 @router.post("/")
 async def upload_file(file: UploadFile = File(...),
-    download: Optional[bool] = Query(False, description="True-Excel-файл, False-JSON")):
+    download: Optional[bool] = Query(True, description="True - Excel-файл, False - JSON")):
     """
     ПАЙПЛАЙН ОБРАБОТКИ ФАЙЛА:
     1. Загрузка и нормализация колонок (SourceLoader)
@@ -82,6 +83,13 @@ async def upload_file(file: UploadFile = File(...),
     now = datetime.now()
     source_date = now.strftime("%d-%m-%Y")
 
+    log_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
+    log_dir = "output/log"
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, f"{log_id}.log")
+
+    write = get_log_writer(log_path)
+
     try:
         # Сохраняем загруженный файл во временный файл
         with tempfile.NamedTemporaryFile(
@@ -95,11 +103,11 @@ async def upload_file(file: UploadFile = File(...),
         # ШАГ 1: SourceLoader — загрузка и маппинг колонок
         # ================================================
         
-        logger.info("="*60)
-        logger.info("ШАГ 1/4: SourceLoader — загрузка и маппинг колонок")
-        logger.info("="*60)
+        write("="*60)
+        write("ШАГ 1/4: SourceLoader — загрузка и маппинг колонок")
+        write("="*60)
 
-        upload_result = process_uploaded_file(file_path=temp_path)
+        upload_result = process_uploaded_file(file_path=temp_path, log_file_path=log_path)
 
         if upload_result["status"] == "ERROR":
             raise HTTPException(status_code=400, detail=upload_result.get('error', "Ошибка загрузчика"))
@@ -107,12 +115,12 @@ async def upload_file(file: UploadFile = File(...),
         df_raw = upload_result['df']
 
         # ================================================
-        # ШАГ 3: SourceMapper — фильтрация под ERD
+        # ШАГ 3: SourceMapper — маппинг и фильтрация колонок
         # ================================================
 
-        logger.info("="*60)
-        logger.info("ШАГ 2/4: SourceMapper — фильтрация колонок под ERD")
-        logger.info("="*60)
+        write("="*60)
+        write("ШАГ 2/4: SourceMapper — маппинг и фильтрация колонок")
+        write("="*60)
 
         mapper_result = process_file(df=df_raw, required_columns=MVP_COLUMNS)
 
@@ -125,24 +133,24 @@ async def upload_file(file: UploadFile = File(...),
         # ШАГ 4: Нормализация данных
         # ================================================
 
-        logger.info("="*60)
-        logger.info("ШАГ 3/4: Нормализатор — очистка данных")
-        logger.info("="*60)
+        write("="*60)
+        write("ШАГ 3/4: Нормализатор — очистка данных")
+        write("="*60)
         
         df = normalize_company_names(df)
-        logger.info("✓ Названия компаний нормализованы")
+        write("✓ Названия компаний нормализованы")
 
         df['inn'] = df['inn'].apply(clean_inn)
-        logger.info("✓ ИНН очищены")
+        write("✓ ИНН очищены")
         
         df['phone'] = df['phone'].apply(clean_phone)
-        logger.info("✓ Телефоны очищены")
+        write("✓ Телефоны очищены")
         
         df['email'] = df['email'].apply(clean_email)
-        logger.info("✓ Email очищены")
+        write("✓ Email очищены")
 
         df['address'] = df['address'].apply(clean_address)
-        logger.info("✓ Адреса очищены")
+        write("✓ Адреса очищены")
 
         df['has_email'] = df['email'].notna() & (df['email'] != '') & (df['email'] != '-')
         df['has_phone'] = df['phone'].notna() & (df['phone'] != '') & (df['phone'] != '-')
@@ -150,9 +158,9 @@ async def upload_file(file: UploadFile = File(...),
         # ================================================
         # ШАГ 5: Дедупликация
         # ================================================
-        logger.info("="*60)
-        logger.info("ШАГ 4/4: Дедупликатор — поиск коллизий")
-        logger.info("="*60)
+        write("="*60)
+        write("ШАГ 4/4: Дедупликатор — поиск коллизий")
+        write("="*60)
 
         dup_columns = ['inn', 'email', 'phone', 'short_name']
         
@@ -168,18 +176,18 @@ async def upload_file(file: UploadFile = File(...),
         if 'duplicate_indices' in dedup_result:
             df['duplicate_flag'] = df.index.isin(dedup_result['duplicate_indices'])
 
-        logger.info(f"✓ Отчёт сохранён: {dedup_result['collisions_file']}")
-        logger.info(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
+        write(f"✓ Отчёт сохранён: {dedup_result['collisions_file']}")
+        write(f"✓ Строк с коллизиями: {dedup_result['rows_affected']}")
 
         # ================================================
         # ШАГ 6: Расчёт качества данных
         # ================================================
-        logger.info("="*60)
-        logger.info("Расчёт качества данных")
-        logger.info("="*60)
+        write("="*60)
+        write("Расчёт качества данных")
+        write("="*60)
          
         quality_report = calculate_data_quality_score(df, dedup_result)
-        logger.info(f'''✓ Quality Score рассчитан: {quality_report['overall_quality_score']}
+        write(f'''✓ Quality Score рассчитан: {quality_report['overall_quality_score']}
                             Детально:
                             COMPLETENESS (Полнота) = {quality_report['metrics'].get("completeness")}
                             UNIQUENESS (Уникальность) = {quality_report['metrics'].get("uniqueness")}
@@ -190,17 +198,21 @@ async def upload_file(file: UploadFile = File(...),
         df['source_name'] = source_name
         df['source_date'] = source_date
 
-        safe_name = "".join(c for c in source_name if c.isalnum())[:10]  # обрезаем до 10 символов
-        df['id'] = [f"{safe_name}-{source_date}-{i+1:05d}" for i in range(len(df))]
+        # TODO: пересмотреть точно ли отличаются айдишники
+        source_hash = hashlib.sha256(source_name.encode("utf-8")).hexdigest()[:8]
+        df["id"] = [
+            f"{source_hash}-{source_date}-{i+1:05d}"
+            for i in range(len(df))
+        ]
 
         clean_data = df.to_dict(orient='records')
 
         # ================================================
         # ШАГ 7: Формирование архива на выдачу
         # ================================================
-        logger.info("="*60)
-        logger.info("Формирование архива для выдачи файлов")
-        logger.info("="*60)
+        write("="*60)
+        write("Формирование архива для выдачи файлов")
+        write("="*60)
 
         if download:
             export_result = export_with_report(
