@@ -3,7 +3,7 @@ name: Deploy to production
 on:
   push:
     branches:
-      - dev
+      - misha
 
 jobs:
   deploy:
@@ -18,320 +18,53 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
-            # Настройка git и обновление кода
-            git config --global --add safe.directory /var/lib/uvicorn/ETL_4dk
+            set -e  # остановка при ошибке
+
             cd /var/lib/uvicorn/ETL_4dk
-            
+
             echo "📦 Pulling latest changes..."
             git pull origin dev
-            
+
             echo "📦 Installing dependencies..."
             /var/lib/uvicorn/ETL_4dk/venv/bin/pip install -r requirements.txt
-            
+
             echo "🔧 Fixing permissions..."
             chown -R uvicorn:uvicorn /var/lib/uvicorn/ETL_4dk
-            
+
             echo "🚀 Restarting uvicorn service..."
             systemctl restart uvicorn
-            
-            # Ждем запуска сервиса
+
             echo "⏳ Waiting for service to start..."
             sleep 5
-            
-            # Проверяем статус сокета
-            if [ -S /run/uvicorn/uvicorn.sock ]; then
-              SOCKET_STATUS="✅ Uvicorn socket is ready"
-            else
-              SOCKET_STATUS="❌ Uvicorn socket not found"
-            fi
-            
-            # Проверяем, что API отвечает
+
+            # Health-check через curl
             echo "🔍 Checking API health..."
-            if curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8000/docs | grep -q "200\|307"; then
-              API_STATUS="✅ API is responding"
-              API_CODE="200"
-            elif curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8000/health 2>/dev/null | grep -q "200"; then
-              API_STATUS="✅ API health check passed"
-              API_CODE="200"
+            if curl -s --max-time 5 http://localhost:8000/health | grep -q '"status":"ok"'; then
+                echo "✅ API is healthy"
             else
-              API_STATUS="⚠️ API may not be ready or health endpoint not configured"
-              API_CODE="unknown"
+                echo "❌ API health check failed!"
+                exit 1
             fi
-            
-            # Получаем информацию о последнем коммите
+
+            # Собираем информацию о коммите
             COMMIT_HASH=$(git -C /var/lib/uvicorn/ETL_4dk rev-parse --short HEAD)
             COMMIT_MESSAGE=$(git -C /var/lib/uvicorn/ETL_4dk log -1 --pretty=%s)
             COMMIT_AUTHOR=$(git -C /var/lib/uvicorn/ETL_4dk log -1 --pretty=%an)
-            COMMIT_DATE=$(git -C /var/lib/uvicorn/ETL_4dk log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S')
-            
-            # Создаем детальный index.html
-            echo "📝 Generating status page..."
-            cat > /var/www/db.vodalchuk.ru/index.html << 'EOF'
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>db.vodalchuk.ru - Deployment Status</title>
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body {
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Fira Code', monospace;
-                        background: #0d1117;
-                        color: #e6edf3;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        min-height: 100vh;
-                        padding: 20px;
-                    }
-                    .container {
-                        max-width: 1000px;
-                        width: 100%;
-                        background: #161b22;
-                        border: 1px solid #30363d;
-                        border-radius: 16px;
-                        padding: 40px;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-                        animation: fadeIn 0.5s ease-in;
-                    }
-                    @keyframes fadeIn {
-                        from { opacity: 0; transform: translateY(-20px); }
-                        to { opacity: 1; transform: translateY(0); }
-                    }
-                    .header {
-                        border-bottom: 2px solid #238636;
-                        padding-bottom: 20px;
-                        margin-bottom: 30px;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        flex-wrap: wrap;
-                        gap: 15px;
-                    }
-                    h1 {
-                        color: #58a6ff;
-                        font-size: 32px;
-                        font-weight: 700;
-                    }
-                    .status-badge {
-                        background: #238636;
-                        padding: 8px 20px;
-                        border-radius: 30px;
-                        font-size: 14px;
-                        font-weight: 600;
-                        letter-spacing: 0.5px;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 8px;
-                    }
-                    .status-badge.warning {
-                        background: #d29922;
-                    }
-                    .info-grid {
-                        display: grid;
-                        grid-template-columns: 180px 1fr;
-                        gap: 12px 25px;
-                        margin: 25px 0;
-                        padding: 20px;
-                        background: #0d1117;
-                        border-radius: 12px;
-                        border: 1px solid #21262d;
-                    }
-                    .label {
-                        color: #8b949e;
-                        font-weight: 500;
-                        font-size: 14px;
-                    }
-                    .value {
-                        color: #f0f6fc;
-                        word-break: break-all;
-                        font-size: 14px;
-                    }
-                    .value.commit {
-                        color: #ffa657;
-                        font-family: 'Fira Code', monospace;
-                    }
-                    .value.green {
-                        color: #3fb950;
-                    }
-                    .value.red {
-                        color: #f85149;
-                    }
-                    .value.yellow {
-                        color: #d29922;
-                    }
-                    .pre-block {
-                        background: #0d1117;
-                        border: 1px solid #21262d;
-                        border-radius: 10px;
-                        padding: 18px;
-                        margin: 20px 0;
-                        font-size: 13px;
-                        overflow-x: auto;
-                        color: #8b949e;
-                        line-height: 1.6;
-                    }
-                    .pre-block .highlight {
-                        color: #58a6ff;
-                        font-weight: 600;
-                    }
-                    .pre-block .success {
-                        color: #3fb950;
-                    }
-                    .pre-block .error {
-                        color: #f85149;
-                    }
-                    .pre-block pre {
-                        margin-top: 10px;
-                        color: #e6edf3;
-                        font-family: 'Fira Code', monospace;
-                        font-size: 13px;
-                        line-height: 1.5;
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                    }
-                    .endpoints {
-                        display: flex;
-                        gap: 15px;
-                        flex-wrap: wrap;
-                        margin: 20px 0;
-                        padding: 15px 20px;
-                        background: #0d1117;
-                        border-radius: 10px;
-                        border: 1px solid #21262d;
-                    }
-                    .endpoint {
-                        color: #58a6ff;
-                        text-decoration: none;
-                        font-size: 14px;
-                        font-weight: 500;
-                        padding: 5px 12px;
-                        border-radius: 6px;
-                        transition: all 0.2s;
-                    }
-                    .endpoint:hover {
-                        background: #1c2333;
-                        text-decoration: underline;
-                    }
-                    .footer {
-                        margin-top: 30px;
-                        padding-top: 20px;
-                        border-top: 1px solid #21262d;
-                        font-size: 13px;
-                        color: #8b949e;
-                        text-align: center;
-                        display: flex;
-                        justify-content: space-between;
-                        flex-wrap: wrap;
-                        gap: 10px;
-                    }
-                    .footer .emoji {
-                        font-style: normal;
-                    }
-                    .service-status {
-                        display: flex;
-                        gap: 20px;
-                        flex-wrap: wrap;
-                        margin: 5px 0;
-                    }
-                    .status-item {
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        font-size: 14px;
-                    }
-                    @media (max-width: 600px) {
-                        .container { padding: 20px; }
-                        .info-grid { grid-template-columns: 1fr; gap: 5px; }
-                        .header { flex-direction: column; align-items: flex-start; }
-                        .footer { flex-direction: column; text-align: center; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>🚀 db.vodalchuk.ru</h1>
-                        <span class="status-badge">✅ LIVE</span>
-                    </div>
-                    
-                    <div class="info-grid">
-                        <span class="label">📌 Branch:</span>
-                        <span class="value green">dev</span>
-                        
-                        <span class="label">🔖 Commit:</span>
-                        <span class="value commit">COMMIT_HASH_PLACEHOLDER</span>
-                        
-                        <span class="label">📝 Message:</span>
-                        <span class="value">COMMIT_MESSAGE_PLACEHOLDER</span>
-                        
-                        <span class="label">👤 Author:</span>
-                        <span class="value">COMMIT_AUTHOR_PLACEHOLDER</span>
-                        
-                        <span class="label">📅 Committed:</span>
-                        <span class="value">COMMIT_DATE_PLACEHOLDER</span>
-                        
-                        <span class="label">🕐 Deployed:</span>
-                        <span class="value green">DEPLOY_TIME_PLACEHOLDER</span>
-                        
-                        <span class="label">🔌 Socket:</span>
-                        <span class="value green">SOCKET_STATUS_PLACEHOLDER</span>
-                        
-                        <span class="label">🌐 API Status:</span>
-                        <span class="value green">API_STATUS_PLACEHOLDER</span>
-                    </div>
-                    
-                    <div class="pre-block">
-                        <span class="highlight">📊 Service Status (systemctl):</span>
-                        <pre>SERVICE_STATUS_PLACEHOLDER</pre>
-                    </div>
-                    
-                    <div class="endpoints">
-                        <span style="color: #8b949e; font-weight: 500;">🔗 Available endpoints:</span>
-                        <a href="/docs" class="endpoint">📖 API Docs</a>
-                        <a href="/openapi.json" class="endpoint">📄 OpenAPI</a>
-                        <a href="/upload/" class="endpoint">📤 Upload</a>
-                    </div>
-                    
-                    <div class="footer">
-                        <span>🔧 Powered by <strong style="color: #58a6ff;">Uvicorn</strong> + <strong style="color: #58a6ff;">Nginx</strong></span>
-                        <span>🟢 All systems operational</span>
-                        <span>📆 DEPLOY_TIME_PLACEHOLDER</span>
-                    </div>
-                </div>
-            </body>
-            </html>
-            EOF
-            
-            # Заменяем плейсхолдеры на реальные значения
-            DEPLOY_TIME=$(date '+%Y-%m-%d %H:%M:%S %Z')
-            SERVICE_STATUS=$(systemctl status uvicorn --no-pager | head -10)
-            
-            sed -i "s|COMMIT_HASH_PLACEHOLDER|$COMMIT_HASH|g" /var/www/db.vodalchuk.ru/index.html
-            sed -i "s|COMMIT_MESSAGE_PLACEHOLDER|$COMMIT_MESSAGE|g" /var/www/db.vodalchuk.ru/index.html
-            sed -i "s|COMMIT_AUTHOR_PLACEHOLDER|$COMMIT_AUTHOR|g" /var/www/db.vodalchuk.ru/index.html
-            sed -i "s|COMMIT_DATE_PLACEHOLDER|$COMMIT_DATE|g" /var/www/db.vodalchuk.ru/index.html
-            sed -i "s|DEPLOY_TIME_PLACEHOLDER|$DEPLOY_TIME|g" /var/www/db.vodalchuk.ru/index.html
-            sed -i "s|SOCKET_STATUS_PLACEHOLDER|$SOCKET_STATUS|g" /var/www/db.vodalchuk.ru/index.html
-            sed -i "s|API_STATUS_PLACEHOLDER|$API_STATUS|g" /var/www/db.vodalchuk.ru/index.html
-            
-            # Экранируем специальные символы для sed
-            SERVICE_STATUS_ESCAPED=$(echo "$SERVICE_STATUS" | sed 's/[]\/$*.^[]/\\&/g')
-            sed -i "s|SERVICE_STATUS_PLACEHOLDER|$SERVICE_STATUS_ESCAPED|g" /var/www/db.vodalchuk.ru/index.html
-            
-            # Финальный вывод
-            echo ""
-            echo "═══════════════════════════════════════════════════════════"
-            echo "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!"
-            echo "═══════════════════════════════════════════════════════════"
-            echo "📦 Commit: $COMMIT_HASH"
-            echo "📝 Message: $COMMIT_MESSAGE"
-            echo "👤 Author: $COMMIT_AUTHOR"
-            echo "🕐 Time: $DEPLOY_TIME"
-            echo "🔌 Socket: $SOCKET_STATUS"
-            echo "🌐 API: $API_STATUS"
-            echo "═══════════════════════════════════════════════════════════"
+            DEPLOY_TIME=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+            # Пишем deployment.json
+            cat > /var/www/db.vodalchuk.ru/deployment.json << JSONEOF
+            {
+                "branch": "dev",
+                "commit": "${COMMIT_HASH}",
+                "message": "${COMMIT_MESSAGE}",
+                "author": "${COMMIT_AUTHOR}",
+                "deployed_at": "${DEPLOY_TIME}"
+            }
+            JSONEOF
+
+            # Проверяем, что uvicorn может прочитать
+            chown uvicorn:uvicorn /var/www/db.vodalchuk.ru/deployment.json
+
+            echo "✅ Deployment completed successfully!"
             echo "🌍 Visit: https://db.vodalchuk.ru"
-            echo "📖 Docs: https://db.vodalchuk.ru/docs"
-            echo "═══════════════════════════════════════════════════════════"
