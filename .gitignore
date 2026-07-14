@@ -186,3 +186,6 @@ test_files
 
 # MacOS
 .DS_Store
+
+#откуда он?
+Todo.json

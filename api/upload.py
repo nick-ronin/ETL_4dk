@@ -9,7 +9,7 @@ import tempfile
 import zipfile
 from datetime import datetime
 from urllib.parse import quote
-import hashlib
+#import hashlib
 import uuid
 
 from fastapi import APIRouter
@@ -197,10 +197,10 @@ async def upload_file(file: UploadFile = File(...),
         df['source_name'] = source_name
         df['source_date'] = source_date
 
-        # TODO: пересмотреть точно ли отличаются айдишники
-        source_hash = hashlib.sha256(source_name.encode("utf-8")).hexdigest()[:8]
+        #source_hash = hashlib.sha256(source_name.encode("utf-8")).hexdigest()[:8]
+        # заменил source_hash на гарантированно уникальный log_id
         df["id"] = [
-            f"{source_hash}-{source_date}-{i+1:05d}"
+            f"{log_id}-{source_date}-{i+1:05d}"
             for i in range(len(df))
         ]
 
