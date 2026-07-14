@@ -67,6 +67,49 @@ def clean_inn(inn):
 
     return inn
 
+import re
+import pandas as pd
+
+import re
+import pandas as pd
+
+def clean_city(address):
+    """
+    Извлекает название города из адресной строки и возвращает его.
+    Если город не найден (или можно вернуть пустую строку).
+    """
+    if pd.isna(address) or not isinstance(address, str):
+        return address
+
+    # Ищем все конструкции вида "г. Название" или "город Название"
+    # Название может состоять из нескольких слов и содержать дефис
+    pattern = r'(?:г\.|город)\s*([А-Яа-яЁё\-]+(?:\s+[А-Яа-яЁё\-]+)*)'
+    matches = re.findall(pattern, address)
+
+    if matches:
+        # Берём последнее найденное название города
+        city = matches[-1].strip()
+        return city
+    else:
+        # Если не найдено, возвращаем исходный адрес
+        return ""
+
+def normalize_city_text(city):
+    """
+    Если строка city содержит "г. " или "город " в начале,
+    извлекает название города (в исходном регистре).
+    Иначе возвращает city без изменений.
+    """
+    if pd.isna(city) or not isinstance(city, str):
+        return city
+
+    city = city.strip()
+    # Ищем префикс в начале строки и захватываем название
+    pattern = r'^(?:г\.|город)\s*([А-Яа-яЁё\-]+(?:\s+[А-Яа-яЁё\-]+)*)'
+    match = re.match(pattern, city, flags=re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return city
 
 
 def clean_email(email_str):
@@ -279,7 +322,61 @@ def normalize_company_names(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-def clean_address(address):
+
+def clean_address(address, city=None):
+    """
+    Принимает:
+        address (str) - исходный адрес из CSV.
+        city (str, опционально) - название города, которое нужно удалить из начала адреса.
+
+    Выполняет:
+        - удаляет лишние пробелы и переносы строк;
+        - удаляет индекс (первые 6 цифр);
+        - если city передан и не пуст, удаляет всё до и включая city (с запятой после);
+        - удаляет конструкции "г. Город, ";
+        - нормализует улицы, дома, корпуса и строения.
+    """
+    if pd.isna(address) or not isinstance(address, str):
+        return address
+
+    # убираем переносы и лишние пробелы
+    address = re.sub(r'[\n\r\t]+', ' ', address)
+    address = re.sub(r'\s+', ' ', address).strip()
+
+    # удаляем индекс (первые 6 цифр) с разделителями
+    address = re.sub(r'^\d{6}\s*[,.]?\s*', '', address)
+
+    # ЕСЛИ ПЕРЕДАН CITY – УДАЛЯЕМ ЕГО И ВСЁ, ЧТО ДО НЕГО
+    if city and isinstance(city, str) and city.strip():
+        # Экранируем спецсимволы и ищем слово с границами \b
+        city_escaped = re.escape(city.strip())
+        # Удаляем всё с начала строки до city включительно, включая запятую и пробелы после
+        address = re.sub(r'^.*?\b' + city_escaped + r'\b\s*,?\s*', '', address, flags=re.IGNORECASE)
+
+    # Удаляем конструкции "г. Город, " (если они остались)
+    address = re.sub(r'(?:г\.|город)\s*([А-Яа-яЁё\-]+(?:\s+[А-Яа-яЁё\-]+)*)\s*,\s*', '', address)
+
+    # нормализуем улицу
+    address = re.sub(r'\b(улица|ул\.)\s*', '', address)
+
+    # нормализуем строение
+    address = re.sub(r'\b(строение|стр\.?|ст\.?|с)\s*(\d+\w*)', r'стр\2', address)
+
+    # нормализуем корпус
+    address = re.sub(r'\b(корпус|корп\.?|к\.)\s*(\d+\w*)', r'корп\2', address)
+
+    # убираем слово "дом" и "д."
+    address = re.sub(r'\b(дом|д\.)\s*', '', address)
+
+    # нормализуем запятые
+    address = re.sub(r'\s*,\s*', ', ', address)
+
+    # убираем лишние пробелы
+    address = re.sub(r'\s+', ' ', address)
+
+    return address.strip(" ,")
+
+def clean_address_old(address):
     """
 
     Принимает:
@@ -304,6 +401,11 @@ def clean_address(address):
     address = re.sub(r'[\n\r\t]+', ' ', address)
     address = re.sub(r'\s+', ' ', address).strip()
 
+    # удаляем первые 6 цифр (индекс) и следующие за ними разделители (запятая, точка, пробелы)
+    address = re.sub(r'^\d{6}\s*[,.]?\s*', '', address)
+    
+    # убирает слово после г. или город
+    address = re.sub(r'(?:г\.|город)\s*([А-Яа-яЁё\-]+(?:\s+[А-Яа-яЁё\-]+)*)\s*,\s*', '', address)
     # нормализуем тип улицы
     address = re.sub(r'\b(улица|ул\.)\s*', '', address)
 
@@ -335,3 +437,7 @@ def clean_address(address):
     address = re.sub(r'\s+', ' ', address)
 
     return address.strip(" ,")
+
+
+print(clean_address("123456, г. Москва, ул. Ленина, д. 10"))
+

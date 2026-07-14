@@ -20,7 +20,7 @@ from fastapi import UploadFile
 from service.source_loader.source_loader import process_uploaded_file
 from service.source_mapper.source_mapper import process_file
 from service.source_mapper.constants import MVP_COLUMNS
-from service.normalizer.normalizer import clean_inn, clean_phone, clean_email, normalize_company_names, clean_address
+from service.normalizer.normalizer import clean_inn, clean_phone, clean_email, normalize_company_names, clean_address, clean_city, normalize_city_text
 from service.deduplicator.get_duplicates import get_duplicates
 from service.quality.quality import calculate_data_quality_score
 from service.exporter.exporter import save_data, build_summary_text, save_report
@@ -146,11 +146,20 @@ async def upload_file(file: UploadFile = File(...),
         df['email'] = df['email'].apply(clean_email)
         write("✓ Email очищены")
 
-        df['address'] = df['address'].apply(clean_address)
+        mask = df['city'].isna() | (df['city'] == '')
+        df.loc[mask, 'city'] = df.loc[mask, 'address'].apply(clean_city)
+
+        # убираем г. если он был изначально
+        df['city'] = df['city'].apply(normalize_city_text)
+        # df['address'] = df['address'].apply(clean_address)
+        df['address'] = df.apply(lambda row: clean_address(row['address'], row['city']), axis=1)
         write("✓ Адреса очищены")
 
         df['has_email'] = df['email'].notna() & (df['email'] != '') & (df['email'] != '-')
         df['has_phone'] = df['phone'].notna() & (df['phone'] != '') & (df['phone'] != '-')
+
+
+
 
         # ================================================
         # ШАГ 4: Дедупликация
