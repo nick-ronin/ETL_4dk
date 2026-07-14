@@ -3,7 +3,7 @@ name: Deploy to production
 on:
   push:
     branches:
-      - misha
+      - dev
 
 jobs:
   deploy:
@@ -23,8 +23,8 @@ jobs:
             cd /var/lib/uvicorn/ETL_4dk
 
             echo "📦 Pulling latest changes..."
-            git fetch origin misha
-            git reset --hard origin/misha
+            git fetch origin dev
+            git reset --hard origin/dev
 
             echo "📦 Installing dependencies..."
             /var/lib/uvicorn/ETL_4dk/venv/bin/pip install -r requirements.txt
