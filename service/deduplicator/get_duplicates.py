@@ -26,8 +26,8 @@ def get_duplicates(df, columns, source_name="uploaded_file", output_dir="output"
             continue
 
         group_counter = 0
-        # TODO: че такое count в этом контексте
-        for value, count in dupl_values.items():
+        # убрал count из цикла ⬇️⬇↓ тк он просто считал кол-во повторений значения
+        for value in dupl_values.items():
             dupl_rows = df[df[col] == value].copy()
 
             dupl_rows['Источник'] = source_name
