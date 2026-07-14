@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETL 4DK – Status</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ETL 4DK</h1>
+        <div id="status" class="status">● <span id="status-text">Checking...</span></div>
+
+        <div class="section">
+            <div class="row">
+                <span class="label">Version</span>
+                <span class="value" id="version">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Branch</span>
+                <span class="value" id="branch">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Commit</span>
+                <span class="value" id="commit">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Message</span>
+                <span class="value" id="message">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Author</span>
+                <span class="value" id="author">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Deployed</span>
+                <span class="value" id="deployed">—</span>
+            </div>
+        </div>
+
+        <div class="section links">
+            <a href="/docs">📖 Swagger</a>
+            <a href="/openapi.json">📄 OpenAPI</a>
+            <a href="https://github.com/nick-ronin/ETL_4dk" target="_blank">🐙 GitHub</a>
+        </div>
+
+        <div class="section">
+            <div class="health-row">
+                <span>Health</span>
+                <span id="health-status" class="badge">CHECKING</span>
+            </div>
+            <div class="health-row">
+                <span>Ready</span>
+                <span id="ready-status" class="badge">CHECKING</span>
+            </div>
+        </div>
+
+        <div class="footer">Last check: <span id="check-time">—</span></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
