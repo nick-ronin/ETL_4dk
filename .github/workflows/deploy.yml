@@ -23,7 +23,7 @@ jobs:
             cd /var/lib/uvicorn/ETL_4dk
 
             echo "📦 Pulling latest changes..."
-            git pull origin dev
+            git pull origin misha
 
             echo "📦 Installing dependencies..."
             /var/lib/uvicorn/ETL_4dk/venv/bin/pip install -r requirements.txt
