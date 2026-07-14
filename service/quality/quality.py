@@ -4,7 +4,7 @@ from typing import Dict, Any, List
 
 # Импортируем список обязательных колонок, которые использует маппер
 # (чтобы проверять полноту только по ним, а не по всем)
-from service.source_processing.source_mapper import MVP_COLUMNS
+from service.source_mapper.constants import MVP_COLUMNS
 
 
 def calculate_data_quality_score(df: pd.DataFrame, dedup_result: Dict[str, Any]) -> Dict[str, Any]:
