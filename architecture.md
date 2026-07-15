@@ -39,17 +39,29 @@
 
 [Документация к API](api/api.md)
 
-### Source Processing
+### Source Loader
 
-Состоит из модулей Source Loader и Source Mapper. Выполняет чтение файлов, определение структуры таблицы, сопоставление названий колонок и формирование единого набора полей для дальнейшей обработки.
+Определяет формат и кодировку, приводит идентификаторы (ИНН, КПП, ОГРН) к строковому типу и возвращает сырой `DataFrame` с оригинальными заголовками.
 
-[Документация к source processing](service/source_processing/source_processing.md)
+[Документация к source loader](service/source_loader/source_loader.md)
+
+### Source Mapper
+
+Принимает DataFrame, приводит названия колонок к единому стандарту, проверяет наличие обязательных полей, оставляет только колонки из списка ERD/MVP и добавляет недостающие пустыми.
+
+[Документация к source mapper](service/source_mapper/source_mapper.md)
+
+### Validator
+
+Проверяет наличие обязательных колонок в DataFrame.
+
+[Документация к validator](service/validator/validator.md)
 
 ### Normalizer
 
 Приводит значения полей к единому формату. Выполняется очистка ИНН, телефонов, адресов электронной почты, адресов и названий организаций.
 
-[Документация к Normalizer](service/normalizer/normalization.md)
+[Документация к Normalizer](service/normalizer/normalizer.md)
 
 ### Deduplicator
 
