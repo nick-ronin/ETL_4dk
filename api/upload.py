@@ -200,7 +200,7 @@ async def upload_file(file: UploadFile = File(...),
         #source_hash = hashlib.sha256(source_name.encode("utf-8")).hexdigest()[:8]
         # заменил source_hash на гарантированно уникальный log_id
         df["id"] = [
-            f"{log_id}-{source_date}-{i+1:05d}"
+            f"{log_id}-{i+1:05d}"
             for i in range(len(df))
         ]
 
