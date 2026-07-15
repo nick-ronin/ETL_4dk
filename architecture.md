@@ -61,7 +61,7 @@
 
 Приводит значения полей к единому формату. Выполняется очистка ИНН, телефонов, адресов электронной почты, адресов и названий организаций.
 
-[Документация к Normalizer](service/normalizer/normalization.md)
+[Документация к Normalizer](service/normalizer/normalizer.md)
 
 ### Deduplicator
 
