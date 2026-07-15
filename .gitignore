@@ -179,3 +179,13 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+output
+test_files
+
+
+# MacOS
+.DS_Store
+
+#откуда он?
+Todo.json
