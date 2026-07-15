@@ -72,7 +72,7 @@ output/log/app.log
 
 ---
 
-### Пример работы
+## Пример работы
 
 ```python
 from logger.logger import get_log_writer
